@@ -403,11 +403,13 @@ def calculate_page_offset(pairs):
     return most_common
 
 def add_page_offset_to_toc_json(data, offset):
+    if offset is None:
+        return data
     for i in range(len(data)):
         if data[i].get('page') is not None and isinstance(data[i]['page'], int):
             data[i]['physical_index'] = data[i]['page'] + offset
             del data[i]['page']
-    
+
     return data
 
 
@@ -573,9 +575,12 @@ def process_no_toc(page_list, start_index=1, model=None, logger=None):
     logger.info(f'len(group_texts): {len(group_texts)}')
 
     toc_with_page_number= generate_toc_init(group_texts[0], model)
+    if not isinstance(toc_with_page_number, list):
+        toc_with_page_number = []
     for group_text in group_texts[1:]:
-        toc_with_page_number_additional = generate_toc_continue(toc_with_page_number, group_text, model)    
-        toc_with_page_number.extend(toc_with_page_number_additional)
+        toc_with_page_number_additional = generate_toc_continue(toc_with_page_number, group_text, model)
+        if isinstance(toc_with_page_number_additional, list):
+            toc_with_page_number.extend(toc_with_page_number_additional)
     logger.info(f'generate_toc: {toc_with_page_number}')
 
     toc_with_page_number = convert_physical_index_to_int(toc_with_page_number)
@@ -671,11 +676,11 @@ def process_none_page_numbers(toc_items, page_list, start_index=1, model=None):
                     continue
 
             item_copy = copy.deepcopy(item)
-            del item_copy['page']
+            item_copy.pop('page', None)
             result = add_page_number_to_toc(page_contents, item_copy, model)
-            if isinstance(result[0]['physical_index'], str) and result[0]['physical_index'].startswith('<physical_index'):
+            if result and isinstance(result[0].get('physical_index'), str) and result[0]['physical_index'].startswith('<physical_index'):
                 item['physical_index'] = int(result[0]['physical_index'].split('_')[-1].rstrip('>').strip())
-                del item['page']
+                item.pop('page', None)
     
     return toc_items
 
@@ -1127,14 +1132,23 @@ def validate_and_truncate_physical_indices(toc_with_page_number, page_list_lengt
     for i, item in enumerate(toc_with_page_number):
         if item.get('physical_index') is not None:
             original_index = item['physical_index']
-            if original_index > max_allowed_page:
+            if not isinstance(original_index, int):
                 item['physical_index'] = None
                 truncated_items.append({
                     'title': item.get('title', 'Unknown'),
                     'original_index': original_index
                 })
                 if logger:
-                    logger.info(f"Removed physical_index for '{item.get('title', 'Unknown')}' (was {original_index}, too far beyond document)")
+                    logger.info(f"Removed non-integer physical_index for '{item.get('title', 'Unknown')}' ({original_index!r})")
+                continue
+            if original_index > max_allowed_page or original_index < start_index:
+                item['physical_index'] = None
+                truncated_items.append({
+                    'title': item.get('title', 'Unknown'),
+                    'original_index': original_index
+                })
+                if logger:
+                    logger.info(f"Removed physical_index for '{item.get('title', 'Unknown')}' (was {original_index}, outside valid range [{start_index}, {max_allowed_page}])")
     
     if truncated_items and logger:
         logger.info(f"Total removed items: {len(truncated_items)}")

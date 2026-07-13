@@ -24,6 +24,15 @@ if not os.getenv("OPENAI_API_KEY") and os.getenv("CHATGPT_API_KEY"):
 
 litellm.drop_params = True
 
+# Local LLM backends (e.g. Ollama on a single GPU) typically serve one request
+# at a time. PageIndex fires many concurrent LLM calls via asyncio.gather, which
+# would otherwise pile up in the backend's queue faster than they can be served,
+# causing later requests to exceed the client timeout and retry, compounding the
+# pileup. Capping in-flight requests keeps the queue bounded.
+_LLM_CONCURRENCY = int(os.getenv("PAGEINDEX_LLM_CONCURRENCY", "4"))
+_llm_semaphore = asyncio.Semaphore(_LLM_CONCURRENCY)
+_LLM_TIMEOUT = float(os.getenv("PAGEINDEX_LLM_TIMEOUT", "1800"))
+
 def count_tokens(text, model=None):
     if not text:
         return 0
@@ -41,6 +50,7 @@ def llm_completion(model, prompt, chat_history=None, return_finish_reason=False)
                 model=model,
                 messages=messages,
                 temperature=0,
+                timeout=_LLM_TIMEOUT,
             )
             content = response.choices[0].message.content
             if return_finish_reason:
@@ -67,11 +77,13 @@ async def llm_acompletion(model, prompt):
     messages = [{"role": "user", "content": prompt}]
     for i in range(max_retries):
         try:
-            response = await litellm.acompletion(
-                model=model,
-                messages=messages,
-                temperature=0,
-            )
+            async with _llm_semaphore:
+                response = await litellm.acompletion(
+                    model=model,
+                    messages=messages,
+                    temperature=0,
+                    timeout=_LLM_TIMEOUT,
+                )
             return response.choices[0].message.content
         except Exception as e:
             print('************* Retrying *************')
@@ -580,8 +592,8 @@ async def generate_node_summary(node, model=None):
     prompt = f"""You are given a part of a document, your task is to generate a description of the partial document about what are main points covered in the partial document.
 
     Partial Document Text: {node['text']}
-    
-    Directly return the description, do not include any other text.
+
+    Directly return the description in Japanese, do not include any other text.
     """
     response = await llm_acompletion(model, prompt)
     return response
@@ -625,8 +637,8 @@ def generate_doc_description(structure, model=None):
     You are given a structure of a document. Your task is to generate a one-sentence description for the document, which makes it easy to distinguish the document from other documents.
         
     Document Structure: {structure}
-    
-    Directly return the description, do not include any other text.
+
+    Directly return the description in Japanese, do not include any other text.
     """
     response = llm_completion(model, prompt)
     return response

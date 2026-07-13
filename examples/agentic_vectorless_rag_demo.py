@@ -52,7 +52,7 @@ Answer based only on tool output. Be concise.
 """
 
 
-def query_agent(client: PageIndexClient, doc_id: str, prompt: str, verbose: bool = False) -> str:
+def query_agent(client: PageIndexClient, doc_id: str, prompt: str, verbose: bool = False, model_settings=None) -> str:
     """Run a document QA agent using the OpenAI Agents SDK.
 
     Streams text output token-by-token and returns the full answer string.
@@ -83,6 +83,7 @@ def query_agent(client: PageIndexClient, doc_id: str, prompt: str, verbose: bool
         instructions=AGENT_SYSTEM_PROMPT,
         tools=[get_document, get_document_structure, get_page_content],
         model=client.retrieve_model,
+        model_settings=model_settings,
         # model_settings=ModelSettings(reasoning={"effort": "low", "summary": "auto"}),  # Uncomment to enable reasoning
     )
 
