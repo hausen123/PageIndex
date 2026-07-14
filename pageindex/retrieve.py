@@ -2,9 +2,9 @@ import json
 import PyPDF2
 
 try:
-    from .utils import get_number_of_pages, remove_fields
+    from .utils import get_number_of_pages, remove_fields, structure_to_list
 except ImportError:
-    from utils import get_number_of_pages, remove_fields
+    from utils import get_number_of_pages, remove_fields, structure_to_list
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
@@ -142,3 +142,47 @@ def get_page_content(documents: dict, doc_id: str, pages: str) -> str:
         return json.dumps({'error': f'Failed to read page content: {e}'})
 
     return json.dumps(content, ensure_ascii=False)
+
+
+def search_document(documents: dict, doc_id: str, keyword: str, max_results: int = 10) -> str:
+    """
+    Search all page/line content for a keyword substring (case-insensitive).
+
+    Use this when no section title in get_document_structure obviously matches the
+    topic — e.g. the topic is discussed under a differently-worded section rather
+    than having its own title. Returns JSON list of {'page': int, 'snippet': str}
+    for the first max_results matches, in document order.
+    """
+    doc_info = documents.get(doc_id)
+    if not doc_info:
+        return json.dumps({'error': f'Document {doc_id} not found'})
+    if not keyword:
+        return json.dumps({'error': 'keyword must not be empty'})
+
+    try:
+        if doc_info.get('type') == 'pdf':
+            total_pages = _count_pages(doc_info)
+            all_pages = _get_pdf_page_content(doc_info, list(range(1, total_pages + 1)))
+        else:
+            all_pages = [
+                {'page': node.get('line_num'), 'content': node.get('text', '')}
+                for node in structure_to_list(doc_info.get('structure', []))
+            ]
+    except Exception as e:
+        return json.dumps({'error': f'Failed to read document content: {e}'})
+
+    keyword_lower = keyword.lower()
+    results = []
+    for p in all_pages:
+        content = p.get('content') or ''
+        idx = content.lower().find(keyword_lower)
+        if idx == -1:
+            continue
+        start = max(0, idx - 40)
+        end = min(len(content), idx + len(keyword) + 40)
+        snippet = content[start:end].replace('\n', ' ')
+        results.append({'page': p.get('page'), 'snippet': snippet})
+        if len(results) >= max_results:
+            break
+
+    return json.dumps(results, ensure_ascii=False)

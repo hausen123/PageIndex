@@ -9,7 +9,7 @@ import PyPDF2
 
 from .page_index import page_index
 from .page_index_md import md_to_tree
-from .retrieve import get_document, get_document_structure, get_page_content
+from .retrieve import get_document, get_document_structure, get_page_content, search_document
 from .utils import ConfigLoader, remove_fields
 
 META_INDEX = "_meta.json"
@@ -232,3 +232,9 @@ class PageIndexClient:
         if self.workspace:
             self._ensure_doc_loaded(doc_id)
         return get_page_content(self.documents, doc_id, pages)
+
+    def search_document(self, doc_id: str, keyword: str, max_results: int = 10) -> str:
+        """Search all page/line content for a keyword substring; returns matching pages + snippets."""
+        if self.workspace:
+            self._ensure_doc_loaded(doc_id)
+        return search_document(self.documents, doc_id, keyword, max_results=max_results)

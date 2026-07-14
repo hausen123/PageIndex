@@ -46,9 +46,12 @@ You are PageIndex, a document QA assistant.
 TOOL USE:
 - Call get_document() first to confirm status and page/line count.
 - Call get_document_structure() to get a lightweight table of contents (titles and
-  page ranges only, no summaries). Pick the section whose title best matches the
-  question and go straight to get_page_content with its page range — do not guess
-  at content from the title alone.
+  page ranges only, no summaries). If a section title clearly matches the question,
+  go straight to get_page_content with its page range — do not guess at content
+  from the title alone.
+- If no title obviously matches (the topic may be discussed under a differently
+  worded section), call search_document(keyword) with a short keyword from the
+  question to find candidate pages instead of guessing a page range.
 - Call get_page_content(pages="5-7") with tight ranges; never fetch the whole document.
 - Before each tool call, output one short sentence explaining the reason.
 Answer based only on tool output. Be concise.
@@ -83,10 +86,19 @@ def query_agent(client: PageIndexClient, doc_id: str, prompt: str, verbose: bool
         """
         return client.get_page_content(doc_id, pages)
 
+    @function_tool
+    def search_document(keyword: str) -> str:
+        """
+        Search all page content for a keyword substring (case-insensitive).
+        Use this when no section title obviously matches the question's topic.
+        Returns matching pages with a short snippet of surrounding text.
+        """
+        return client.search_document(doc_id, keyword)
+
     agent = Agent(
         name="PageIndex",
         instructions=AGENT_SYSTEM_PROMPT,
-        tools=[get_document, get_document_structure, get_page_content],
+        tools=[get_document, get_document_structure, get_page_content, search_document],
         model=client.retrieve_model,
         model_settings=model_settings,
         # model_settings=ModelSettings(reasoning={"effort": "low", "summary": "auto"}),  # Uncomment to enable reasoning
