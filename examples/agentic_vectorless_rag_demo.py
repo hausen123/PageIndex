@@ -45,7 +45,10 @@ AGENT_SYSTEM_PROMPT = """
 You are PageIndex, a document QA assistant.
 TOOL USE:
 - Call get_document() first to confirm status and page/line count.
-- Call get_document_structure() to identify relevant page ranges.
+- Call get_document_structure() to get a lightweight table of contents (titles and
+  page ranges only, no summaries). Pick the section whose title best matches the
+  question and go straight to get_page_content with its page range — do not guess
+  at content from the title alone.
 - Call get_page_content(pages="5-7") with tight ranges; never fetch the whole document.
 - Before each tool call, output one short sentence explaining the reason.
 Answer based only on tool output. Be concise.
@@ -58,6 +61,8 @@ def query_agent(client: PageIndexClient, doc_id: str, prompt: str, verbose: bool
     Streams text output token-by-token and returns the full answer string.
     Tool calls are always printed; verbose=True also prints arguments and output previews.
     """
+    if model_settings is None:
+        model_settings = ModelSettings()
 
     @function_tool
     def get_document() -> str:
@@ -66,8 +71,8 @@ def query_agent(client: PageIndexClient, doc_id: str, prompt: str, verbose: bool
 
     @function_tool
     def get_document_structure() -> str:
-        """Get the document's full tree structure (without text) to find relevant sections."""
-        return client.get_document_structure(doc_id)
+        """Get a lightweight table of contents (titles and page ranges only, no summaries)."""
+        return client.get_document_structure(doc_id, titles_only=True)
 
     @function_tool
     def get_page_content(pages: str) -> str:

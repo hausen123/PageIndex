@@ -97,13 +97,20 @@ def get_document(documents: dict, doc_id: str) -> str:
     return json.dumps(result)
 
 
-def get_document_structure(documents: dict, doc_id: str) -> str:
-    """Return tree structure JSON with text fields removed (saves tokens)."""
+def get_document_structure(documents: dict, doc_id: str, titles_only: bool = False) -> str:
+    """
+    Return tree structure JSON with text fields removed (saves tokens).
+
+    titles_only=True also strips 'summary', keeping only title/node_id/start_index/
+    end_index/nodes — a lightweight table of contents for an initial overview.
+    Page ranges are still enough to jump straight to get_page_content from there.
+    """
     doc_info = documents.get(doc_id)
     if not doc_info:
         return json.dumps({'error': f'Document {doc_id} not found'})
     structure = doc_info.get('structure', [])
-    structure_no_text = remove_fields(structure, fields=['text'])
+    fields_to_remove = ['text', 'summary'] if titles_only else ['text']
+    structure_no_text = remove_fields(structure, fields=fields_to_remove)
     return json.dumps(structure_no_text, ensure_ascii=False)
 
 

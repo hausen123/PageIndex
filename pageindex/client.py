@@ -221,11 +221,11 @@ class PageIndexClient:
         """Return document metadata JSON."""
         return get_document(self.documents, doc_id)
 
-    def get_document_structure(self, doc_id: str) -> str:
+    def get_document_structure(self, doc_id: str, titles_only: bool = False) -> str:
         """Return document tree structure JSON (without text fields)."""
         if self.workspace:
             self._ensure_doc_loaded(doc_id)
-        return get_document_structure(self.documents, doc_id)
+        return get_document_structure(self.documents, doc_id, titles_only=titles_only)
 
     def get_page_content(self, doc_id: str, pages: str) -> str:
         """Return page content for the given pages string (e.g. '5-7', '3,8', '12')."""
