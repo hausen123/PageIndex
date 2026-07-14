@@ -233,8 +233,8 @@ class PageIndexClient:
             self._ensure_doc_loaded(doc_id)
         return get_page_content(self.documents, doc_id, pages)
 
-    def search_document(self, doc_id: str, keyword: str, max_results: int = 10) -> str:
+    def search_document(self, doc_id: str, keyword: str, max_snippets: int = 10) -> str:
         """Search all page/line content for a keyword substring; returns matching pages + snippets."""
         if self.workspace:
             self._ensure_doc_loaded(doc_id)
-        return search_document(self.documents, doc_id, keyword, max_results=max_results)
+        return search_document(self.documents, doc_id, keyword, max_snippets=max_snippets)

@@ -144,14 +144,18 @@ def get_page_content(documents: dict, doc_id: str, pages: str) -> str:
     return json.dumps(content, ensure_ascii=False)
 
 
-def search_document(documents: dict, doc_id: str, keyword: str, max_results: int = 10) -> str:
+def search_document(documents: dict, doc_id: str, keyword: str, max_snippets: int = 10) -> str:
     """
     Search all page/line content for a keyword substring (case-insensitive).
 
-    Use this when no section title in get_document_structure obviously matches the
-    topic — e.g. the topic is discussed under a differently-worded section rather
-    than having its own title. Returns JSON list of {'page': int, 'snippet': str}
-    for the first max_results matches, in document order.
+    Use this to check whether a topic is covered in sections other than the one
+    you've already found — a topic is often split across multiple sections (e.g.
+    one identifies a risk, a separate one covers the actual countermeasure/design).
+
+    Returns JSON: {'total_matches': int, 'pages_with_match': [int, ...],
+    'snippets': [{'page': int, 'snippet': str}, ...]} — snippets are capped at
+    max_snippets, but pages_with_match always lists every matching page, so you can
+    see the full spread even when there are more matches than snippets shown.
     """
     doc_info = documents.get(doc_id)
     if not doc_info:
@@ -172,7 +176,7 @@ def search_document(documents: dict, doc_id: str, keyword: str, max_results: int
         return json.dumps({'error': f'Failed to read document content: {e}'})
 
     keyword_lower = keyword.lower()
-    results = []
+    matches = []
     for p in all_pages:
         content = p.get('content') or ''
         idx = content.lower().find(keyword_lower)
@@ -181,8 +185,11 @@ def search_document(documents: dict, doc_id: str, keyword: str, max_results: int
         start = max(0, idx - 40)
         end = min(len(content), idx + len(keyword) + 40)
         snippet = content[start:end].replace('\n', ' ')
-        results.append({'page': p.get('page'), 'snippet': snippet})
-        if len(results) >= max_results:
-            break
+        matches.append({'page': p.get('page'), 'snippet': snippet})
 
-    return json.dumps(results, ensure_ascii=False)
+    result = {
+        'total_matches': len(matches),
+        'pages_with_match': [m['page'] for m in matches],
+        'snippets': matches[:max_snippets],
+    }
+    return json.dumps(result, ensure_ascii=False)
