@@ -146,7 +146,12 @@ def get_page_content(documents: dict, doc_id: str, pages: str) -> str:
 
 def search_document(documents: dict, doc_id: str, keyword: str, max_snippets: int = 10) -> str:
     """
-    Search all page/line content for a keyword substring (case-insensitive).
+    Search all page/line content for a keyword (case-insensitive).
+
+    If keyword contains multiple whitespace-separated words, a page matches when
+    ALL of them appear somewhere on it (in any order/position) — not just when the
+    exact phrase appears verbatim, since models often pass multi-word keywords and
+    a literal-phrase match would silently miss pages that clearly discuss the topic.
 
     Use this to check whether a topic is covered in sections other than the one
     you've already found — a topic is often split across multiple sections (e.g.
@@ -160,7 +165,9 @@ def search_document(documents: dict, doc_id: str, keyword: str, max_snippets: in
     doc_info = documents.get(doc_id)
     if not doc_info:
         return json.dumps({'error': f'Document {doc_id} not found'})
-    if not keyword:
+
+    terms = [t for t in keyword.lower().split() if t] if keyword else []
+    if not terms:
         return json.dumps({'error': 'keyword must not be empty'})
 
     try:
@@ -175,15 +182,17 @@ def search_document(documents: dict, doc_id: str, keyword: str, max_snippets: in
     except Exception as e:
         return json.dumps({'error': f'Failed to read document content: {e}'})
 
-    keyword_lower = keyword.lower()
     matches = []
     for p in all_pages:
         content = p.get('content') or ''
-        idx = content.lower().find(keyword_lower)
-        if idx == -1:
+        content_lower = content.lower()
+        positions = [content_lower.find(t) for t in terms]
+        if any(pos == -1 for pos in positions):
             continue
-        start = max(0, idx - 40)
-        end = min(len(content), idx + len(keyword) + 40)
+        first_idx = min(pos for pos in positions if pos != -1)
+        first_term_len = len(terms[positions.index(first_idx)])
+        start = max(0, first_idx - 40)
+        end = min(len(content), first_idx + first_term_len + 40)
         snippet = content[start:end].replace('\n', ' ')
         matches.append({'page': p.get('page'), 'snippet': snippet})
 
