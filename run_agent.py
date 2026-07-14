@@ -1,23 +1,23 @@
 """
 Ask a question against the cached NRA078003434-002-002.pdf tree index, without
-re-indexing. Uses the harness-enforced agent loop (tests/guarded_agent.py):
+re-indexing. Uses the harness-enforced agent loop (agent/guarded_agent.py):
 get_page_content must be called at least once before any answer is accepted —
 local models don't reliably follow "verify before answering" as a prompt
 instruction, so this is enforced structurally instead.
 
 Usage:
-    python3 tests/query_doc.py "質問文"
-    python3 tests/query_doc.py "質問文" --model ollama_chat/qwen3:14b
-    python3 tests/query_doc.py "質問文" --io-log /tmp/my_run_io.jsonl
+    python3 run_agent.py "質問文"
+    python3 run_agent.py "質問文" --model ollama_chat/qwen3:14b
+    python3 run_agent.py "質問文" --io-log /tmp/my_run_io.jsonl
 """
 import argparse
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).parent))
 
 from pageindex import PageIndexClient
-from tests.guarded_agent import query_agent_guarded
+from agent.guarded_agent import query_agent_guarded
 
 # Gemma4 release notes recommend top_k=50, min_p=0.05 to curb repetition collapse;
 # temperature=0 (greedy) has no escape hatch since Ollama's sampler ignores repeat_penalty for this model.
@@ -28,7 +28,7 @@ GEMMA4_SAFE_KWARGS = {
 }
 
 DEFAULT_MODEL = "ollama_chat/odytrice/gemma4:4090-26b"
-WORKSPACE = Path(__file__).parent / "workspace"
+WORKSPACE = Path(__file__).parent / "agent" / "workspace"
 
 
 def main():
@@ -39,7 +39,7 @@ def main():
     args = parser.parse_args()
 
     if args.io_log:
-        from tests.llm_io_logger import enable
+        from agent.llm_io_logger import enable
         enable(args.io_log)
         print(f"Logging LLM I/O to: {args.io_log}")
 

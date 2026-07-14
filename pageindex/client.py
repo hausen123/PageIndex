@@ -29,8 +29,6 @@ class PageIndexClient:
     """
     A client for indexing and retrieving document content.
     Flow: index() -> get_document() / get_document_structure() / get_page_content()
-
-    For agent-based QA, see examples/agentic_vectorless_rag_demo.py.
     """
     def __init__(self, api_key: str = None, model: str = None, retrieve_model: str = None, workspace: str = None):
         if api_key:

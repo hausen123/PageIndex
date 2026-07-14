@@ -10,7 +10,7 @@ by the OpenAI Agents SDK's LitellmModel, since both go through litellm.
 Writes one JSON object per line (JSONL) to the given path.
 
 Usage:
-    from tests.llm_io_logger import enable
+    from agent.llm_io_logger import enable
     enable("/tmp/my_run_io.jsonl")
     # ... run whatever makes litellm calls (sync or async, streaming or not) ...
 """

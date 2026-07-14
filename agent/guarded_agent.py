@@ -3,7 +3,7 @@ Hand-rolled agent loop that structurally guarantees get_page_content is called
 at least once before any final answer is accepted from the model — a harness-
 level guarantee rather than a system-prompt request, since local models don't
 reliably follow "always verify before answering" as an instruction (see
-tests/README.md for the measured failure rate without this gate).
+agent/README.md for the measured failure rate without this gate).
 
 Uses litellm directly (bypassing the OpenAI Agents SDK's Runner) so we control
 turn-by-turn whether a "final answer" is accepted or rejected and forced to
