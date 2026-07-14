@@ -52,6 +52,10 @@ TOOL USE:
 - If no title obviously matches (the topic may be discussed under a differently
   worded section), call search_document(keyword) with a short keyword from the
   question to find candidate pages instead of guessing a page range.
+- search_document only returns a short snippet around each match — it may cut off
+  mid-sentence or omit a qualifier stated just after or before it. Never answer from
+  a snippet alone: follow up with get_page_content on the matching page(s) (and the
+  next page too, if the snippet trails off) to read the full context before answering.
 - Call get_page_content(pages="5-7") with tight ranges; never fetch the whole document.
 - Before each tool call, output one short sentence explaining the reason.
 Answer based only on tool output. Be concise.
