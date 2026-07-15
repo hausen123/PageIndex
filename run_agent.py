@@ -1,5 +1,5 @@
 """
-Ask a question against the cached NRA078003434-002-002.pdf tree index, without
+Ask a question against the indexed document in agent/workspace/, without
 re-indexing. Uses the harness-enforced agent loop (agent/guarded_agent.py):
 get_page_content must be called at least once before any answer is accepted —
 local models don't reliably follow "verify before answering" as a prompt
@@ -17,6 +17,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from pageindex import PageIndexClient
+from pageindex.utils import ConfigLoader
 from agent.guarded_agent import query_agent_guarded
 
 # Gemma4 release notes recommend top_k=50, min_p=0.05 to curb repetition collapse;
@@ -27,31 +28,34 @@ GEMMA4_SAFE_KWARGS = {
     "extra_body": {"top_k": 50, "min_p": 0.05},
 }
 
-DEFAULT_MODEL = "ollama_chat/odytrice/gemma4:4090-26b"
 WORKSPACE = Path(__file__).parent / "agent" / "workspace"
+DEFAULT_IO_LOG = "/tmp/run_agent_io.jsonl"
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("question", help="Question to ask the agent")
-    parser.add_argument("--model", default=DEFAULT_MODEL, help=f"litellm model string (default: {DEFAULT_MODEL})")
-    parser.add_argument("--io-log", default=None, help="If set, log raw LLM input/output as JSONL to this path")
+    parser.add_argument("--model", default=None, help="litellm model string (default: config.yaml's retrieve_model)")
+    parser.add_argument("--io-log", default=DEFAULT_IO_LOG, help=f"Log raw LLM input/output as JSONL to this path (default: {DEFAULT_IO_LOG})")
     args = parser.parse_args()
 
-    if args.io_log:
-        from agent.llm_io_logger import enable
-        enable(args.io_log)
-        print(f"Logging LLM I/O to: {args.io_log}")
+    from agent.llm_io_logger import enable
+    enable(args.io_log)
+    print(f"Logging LLM I/O to: {args.io_log}")
 
     client = PageIndexClient(workspace=WORKSPACE)
     doc_id = next(iter(client.documents.keys()), None)
     if not doc_id:
         raise RuntimeError(f"No cached document found in workspace: {WORKSPACE}")
 
-    model_kwargs = GEMMA4_SAFE_KWARGS if "gemma4" in args.model else {}
+    # Note: client.retrieve_model is normalized for the OpenAI Agents SDK (adds a
+    # "litellm/" prefix); guarded_agent.py calls litellm directly, so we read the
+    # raw config value instead.
+    model = args.model or ConfigLoader().load().retrieve_model
+    model_kwargs = GEMMA4_SAFE_KWARGS if "gemma4" in model else {}
 
     print(f"Question: '{args.question}'")
-    answer = query_agent_guarded(client, doc_id, args.question, model=args.model, model_kwargs=model_kwargs)
+    answer = query_agent_guarded(client, doc_id, args.question, model=model, model_kwargs=model_kwargs)
     print("\n=== Final Answer ===")
     print(answer)
 

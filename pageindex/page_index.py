@@ -5,8 +5,6 @@ import math
 import random
 import re
 from .utils import *
-import os
-from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
 ################### check title in page #########################################################
@@ -121,24 +119,6 @@ def toc_detector_single_page(content, model=None):
     return json_content.get('toc_detected', 'no')
 
 
-def check_if_toc_extraction_is_complete(content, toc, model=None):
-    prompt = f"""
-    You are given a partial document  and a  table of contents.
-    Your job is to check if the  table of contents is complete, which it contains all the main sections in the partial document.
-
-    Reply format:
-    {{
-        "thinking": <why do you think the table of contents is complete or not>
-        "completed": "yes" or "no"
-    }}
-    Directly return the final JSON structure. Do not output anything else."""
-
-    prompt = prompt + '\n Document:\n' + content + '\n Table of contents:\n' + toc
-    response = llm_completion(model=model, prompt=prompt)
-    json_content = extract_json(response)
-    return json_content.get('completed', 'no')
-
-
 def check_if_toc_transformation_is_complete(content, toc, model=None):
     prompt = f"""
     You are given a raw table of contents and a  table of contents.
@@ -155,40 +135,6 @@ def check_if_toc_transformation_is_complete(content, toc, model=None):
     response = llm_completion(model=model, prompt=prompt)
     json_content = extract_json(response)
     return json_content.get('completed', 'no')
-
-def extract_toc_content(content, model=None):
-    prompt = f"""
-    Your job is to extract the full table of contents from the given text, replace ... with :
-
-    Given text: {content}
-
-    Directly return the full table of contents content. Do not output anything else."""
-
-    response, finish_reason = llm_completion(model=model, prompt=prompt, return_finish_reason=True)
-    
-    if_complete = check_if_toc_transformation_is_complete(content, response, model)
-    if if_complete == "yes" and finish_reason == "finished":
-        return response
-    
-    chat_history = [
-        {"role": "user", "content": prompt}, 
-        {"role": "assistant", "content": response},    
-    ]
-    continue_prompt = "please continue the generation of table of contents, directly output the remaining part of the structure"
-    
-    max_attempts = 5
-    for attempt in range(max_attempts):
-        new_response, finish_reason = llm_completion(model=model, prompt=continue_prompt, chat_history=chat_history, return_finish_reason=True)
-        response = response + new_response
-        chat_history.append({"role": "user", "content": continue_prompt})
-        chat_history.append({"role": "assistant", "content": new_response})
-        if_complete = check_if_toc_transformation_is_complete(content, response, model)
-        if if_complete == "yes" and finish_reason == "finished":
-            break
-    else:
-        raise Exception('Failed to complete table of contents extraction after maximum retries')
-    
-    return response
 
 def detect_page_index(toc_content, model=None):
     print('start detect_page_index')
@@ -210,7 +156,7 @@ def detect_page_index(toc_content, model=None):
     json_content = extract_json(response)
     return json_content.get('page_index_given_in_toc', 'no')
 
-def toc_extractor(page_list, toc_page_list, model):
+def extract_raw_toc(page_list, toc_page_list, model):
     def transform_dots_to_colon(text):
         text = re.sub(r'\.{5,}', ': ', text)
         # Handle dots separated by spaces
@@ -231,8 +177,8 @@ def toc_extractor(page_list, toc_page_list, model):
 
 
 
-def toc_index_extractor(toc, content, model=None):
-    print('start toc_index_extractor')
+def match_toc_titles_to_pages(toc, content, model=None):
+    print('start match_toc_titles_to_pages')
     toc_extractor_prompt = """
     You are given a table of contents in a json format and several pages of a document, your job is to add the physical_index to the table of contents in the json format.
 
@@ -261,8 +207,8 @@ def toc_index_extractor(toc, content, model=None):
 
 
 
-def toc_transformer(toc_content, model=None):
-    print('start toc_transformer')
+def structure_toc_text(toc_content, model=None):
+    print('start structure_toc_text')
     init_prompt = """
     You are given a table of contents, You job is to transform the whole table of content into a JSON format included table_of_contents.
 
@@ -482,18 +428,6 @@ def add_page_number_to_toc(part, structure, model=None):
     return json_result
 
 
-def remove_first_physical_index_section(text):
-    """
-    Removes the first section between <physical_index_X> and <physical_index_X> tags,
-    and returns the remaining text.
-    """
-    pattern = r'<physical_index_\d+>.*?<physical_index_\d+>'
-    match = re.search(pattern, text, re.DOTALL)
-    if match:
-        # Remove the first matched section
-        return text.replace(match.group(0), '', 1)
-    return text
-
 ### add verify completeness
 def generate_toc_continue(toc_content, part, model=None):
     print('start generate_toc_continue')
@@ -591,8 +525,8 @@ def process_no_toc(page_list, start_index=1, model=None, logger=None):
 def process_toc_no_page_numbers(toc_content, toc_page_list, page_list,  start_index=1, model=None, logger=None):
     page_contents=[]
     token_lengths=[]
-    toc_content = toc_transformer(toc_content, model)
-    logger.info(f'toc_transformer: {toc_content}')
+    toc_content = structure_toc_text(toc_content, model)
+    logger.info(f'structure_toc_text: {toc_content}')
     for page_index in range(start_index, start_index+len(page_list)):
         page_text = f"<physical_index_{page_index}>\n{page_list[page_index-start_index][0]}\n<physical_index_{page_index}>\n\n"
         page_contents.append(page_text)
@@ -614,7 +548,7 @@ def process_toc_no_page_numbers(toc_content, toc_page_list, page_list,  start_in
 
 
 def process_toc_with_page_numbers(toc_content, toc_page_list, page_list, toc_check_page_num=None, model=None, logger=None):
-    toc_with_page_number = toc_transformer(toc_content, model)
+    toc_with_page_number = structure_toc_text(toc_content, model)
     logger.info(f'toc_with_page_number: {toc_with_page_number}')
 
     toc_no_page_number = remove_page_number(copy.deepcopy(toc_with_page_number))
@@ -624,7 +558,7 @@ def process_toc_with_page_numbers(toc_content, toc_page_list, page_list, toc_che
     for page_index in range(start_page_index, min(start_page_index + toc_check_page_num, len(page_list))):
         main_content += f"<physical_index_{page_index+1}>\n{page_list[page_index][0]}\n<physical_index_{page_index+1}>\n\n"
 
-    toc_with_physical_index = toc_index_extractor(toc_no_page_number, main_content, model)
+    toc_with_physical_index = match_toc_titles_to_pages(toc_no_page_number, main_content, model)
     logger.info(f'toc_with_physical_index: {toc_with_physical_index}')
 
     toc_with_physical_index = convert_physical_index_to_int(toc_with_physical_index)
@@ -694,7 +628,7 @@ def check_toc(page_list, opt=None):
         return {'toc_content': None, 'toc_page_list': [], 'page_index_given_in_toc': 'no'}
     else:
         print('toc found')
-        toc_json = toc_extractor(page_list, toc_page_list, opt.model)
+        toc_json = extract_raw_toc(page_list, toc_page_list, opt.model)
 
         if toc_json['page_index_given_in_toc'] == 'yes':
             print('index found')
@@ -715,7 +649,7 @@ def check_toc(page_list, opt=None):
                 if len(additional_toc_pages) == 0:
                     break
 
-                additional_toc_json = toc_extractor(page_list, additional_toc_pages, opt.model)
+                additional_toc_json = extract_raw_toc(page_list, additional_toc_pages, opt.model)
                 if additional_toc_json['page_index_given_in_toc'] == 'yes':
                     print('index found')
                     return {'toc_content': additional_toc_json['toc_content'], 'toc_page_list': additional_toc_pages, 'page_index_given_in_toc': 'yes'}
@@ -1087,7 +1021,7 @@ def page_index_main(doc, opt=None):
                 add_node_text(structure, page_list)
             await generate_summaries_for_structure(structure, model=opt.model)
             if opt.if_add_node_text == 'no':
-                remove_structure_text(structure)
+                structure = remove_fields(structure, fields=['text'])
 
         result = {'doc_name': get_pdf_name(doc)}
         if opt.if_add_doc_description == 'yes':
