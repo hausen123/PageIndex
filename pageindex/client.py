@@ -66,13 +66,14 @@ class PageIndexClient:
 
         if mode == "pdf" or (mode == "auto" and is_pdf):
             print(f"Indexing PDF: {file_path}")
+            # if_add_node_summary/if_add_doc_description/if_add_node_text are left
+            # to config.yaml — PDF retrieval reads from the 'pages' cache below
+            # (extracted separately), not from structure text, so node text isn't
+            # needed here regardless of the config value.
             result = page_index(
                 doc=file_path,
                 model=self.model,
-                if_add_node_summary='yes',
-                if_add_node_text='yes',
                 if_add_node_id='yes',
-                if_add_doc_description='yes'
             )
             # Extract per-page text so queries don't need the original PDF
             pages = []
@@ -94,10 +95,13 @@ class PageIndexClient:
 
         elif mode == "md" or (mode == "auto" and is_md):
             print(f"Indexing Markdown: {file_path}")
+            # md_to_tree doesn't consult config.yaml (unlike page_index()), so these
+            # are set explicitly. if_add_node_text stays 'yes': Markdown retrieval
+            # reads structure['text'] directly, with no separate pages cache like PDF has.
             coro = md_to_tree(
                 md_path=file_path,
                 if_thinning=False,
-                if_add_node_summary='yes',
+                if_add_node_summary='no',
                 summary_token_threshold=200,
                 model=self.model,
                 if_add_doc_description='yes',

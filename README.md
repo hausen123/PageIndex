@@ -1,4 +1,6 @@
-# PageIndex
+# PageIndex - for Shinsa.
+
+[VectifyAI/PageIndex](https://github.com/VectifyAI/PageIndex)のフォークです。
 
 ローカルモデル（Ollama等）を使ったインデックス作成・検索のツール群。
 

@@ -1088,21 +1088,16 @@ def page_index_main(doc, opt=None):
             await generate_summaries_for_structure(structure, model=opt.model)
             if opt.if_add_node_text == 'no':
                 remove_structure_text(structure)
-            if opt.if_add_doc_description == 'yes':
-                # Create a clean structure without unnecessary fields for description generation
-                clean_structure = create_clean_structure_for_description(structure)
-                doc_description = generate_doc_description(clean_structure, model=opt.model)
-                structure = format_structure(structure, order=['title', 'node_id', 'start_index', 'end_index', 'summary', 'text', 'nodes'])
-                return {
-                    'doc_name': get_pdf_name(doc),
-                    'doc_description': doc_description,
-                    'structure': structure,
-                }
+
+        result = {'doc_name': get_pdf_name(doc)}
+        if opt.if_add_doc_description == 'yes':
+            # Create a clean structure without unnecessary fields for description generation
+            clean_structure = create_clean_structure_for_description(structure)
+            result['doc_description'] = generate_doc_description(clean_structure, model=opt.model)
+
         structure = format_structure(structure, order=['title', 'node_id', 'start_index', 'end_index', 'summary', 'text', 'nodes'])
-        return {
-            'doc_name': get_pdf_name(doc),
-            'structure': structure,
-        }
+        result['structure'] = structure
+        return result
 
     return asyncio.run(page_index_builder())
 
