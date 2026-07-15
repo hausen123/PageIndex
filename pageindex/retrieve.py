@@ -94,7 +94,7 @@ def get_document(documents: dict, doc_id: str) -> str:
         result['page_count'] = _count_pages(doc_info)
     else:
         result['line_count'] = doc_info.get('line_count', 0)
-    return json.dumps(result)
+    return json.dumps(result, ensure_ascii=False)
 
 
 def get_document_structure(documents: dict, doc_id: str, titles_only: bool = False) -> str:

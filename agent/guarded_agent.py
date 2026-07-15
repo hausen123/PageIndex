@@ -34,12 +34,12 @@ def _completion_with_retries(**kwargs):
 
 SYSTEM_PROMPT = """
 You are PageIndex, a document QA assistant.
+Document metadata (name, description, page count) and its table of contents (titles
+and page ranges only, no summaries) are provided below — no need to look them up
+yourself. Some node titles are just a short heading; others happen to be a full
+sentence of source text. Either way, a title is a pointer to where to look, never
+the full answer by itself.
 TOOL USE:
-- Call get_document() first to confirm status and page/line count.
-- Call get_document_structure() to get a lightweight table of contents (titles and
-  page ranges only, no summaries). Some node titles are just a short heading;
-  others happen to be a full sentence of source text. Either way, a title is a
-  pointer to where to look, never the full answer by itself.
 - Always call search_document(keyword) with a short keyword from the question, even
   if a title already looks like a match — a topic is often split across multiple
   sections (e.g. one section identifies a risk, a separate section covers the
@@ -54,22 +54,6 @@ reasoning or tool-call explanations were in. Answer based only on tool output. B
 """
 
 TOOLS = [
-    {
-        "type": "function",
-        "function": {
-            "name": "get_document",
-            "description": "Get document metadata: status, page count, name, and description.",
-            "parameters": {"type": "object", "properties": {}, "required": []},
-        },
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "get_document_structure",
-            "description": "Get a lightweight table of contents (titles and page ranges only, no summaries).",
-            "parameters": {"type": "object", "properties": {}, "required": []},
-        },
-    },
     {
         "type": "function",
         "function": {
@@ -200,11 +184,7 @@ def _select_document(client, question: str, model: str, model_kwargs: dict, verb
 
 
 def _execute_tool(client, doc_id, name, args):
-    if name == "get_document":
-        return client.get_document(doc_id)
-    elif name == "get_document_structure":
-        return client.get_document_structure(doc_id, titles_only=True)
-    elif name == "get_page_content":
+    if name == "get_page_content":
         return client.get_page_content(doc_id, args.get("pages", ""))
     elif name == "search_document":
         return client.search_document(doc_id, args.get("keyword", ""))
@@ -229,6 +209,12 @@ def query_agent_guarded(
     workspace holds exactly one document; with 2+ documents, a forced, isolated
     tool call (_select_document) picks one before the main loop starts — the
     main loop itself is identical either way.
+
+    get_document metadata and get_document_structure's table of contents are
+    fetched by the harness and injected below rather than left as first-turn
+    tool choices: both take no arguments and are always called once the
+    document is fixed, so there is nothing for the LLM to decide — no LLM
+    turn is spent on either.
     """
     model_kwargs = model_kwargs or {}
 
@@ -240,9 +226,22 @@ def query_agent_guarded(
         else:
             raise RuntimeError("No documents found in workspace")
 
+    doc_info = client.get_document(doc_id)
+    doc_structure = client.get_document_structure(doc_id, titles_only=True)
+    if verbose:
+        print(f"\n[get_document]: {doc_info}")
+        print(f"\n[get_document_structure]: {doc_structure}")
+
     messages = [
         {"role": "system", "content": SYSTEM_PROMPT},
-        {"role": "user", "content": question},
+        {
+            "role": "user",
+            "content": (
+                f"Document metadata: {doc_info}\n\n"
+                f"Table of contents: {doc_structure}\n\n"
+                f"Question: {question}"
+            ),
+        },
     ]
     page_content_called = False
 
