@@ -152,6 +152,9 @@ class PageIndexClient:
         try:
             with open(path, "r", encoding="utf-8") as f:
                 return json.load(f)
+        except FileNotFoundError:
+            print(f"Warning: missing {Path(path).name}")
+            return None
         except (json.JSONDecodeError, OSError) as e:
             print(f"Warning: corrupt {Path(path).name}: {e}")
             return None
