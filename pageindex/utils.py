@@ -22,14 +22,64 @@ if not os.getenv("OPENAI_API_KEY") and os.getenv("CHATGPT_API_KEY"):
 
 litellm.drop_params = True
 
+
+class ConfigLoader:
+    def __init__(self, default_path: str = None):
+        if default_path is None:
+            default_path = Path(__file__).parent / "config.yaml"
+        self._default_dict = self._load_yaml(default_path)
+
+    @staticmethod
+    def _load_yaml(path):
+        with open(path, "r", encoding="utf-8") as f:
+            return yaml.safe_load(f) or {}
+
+    def _validate_keys(self, user_dict):
+        unknown_keys = set(user_dict) - set(self._default_dict)
+        if unknown_keys:
+            raise ValueError(f"Unknown config keys: {unknown_keys}")
+
+    def load(self, user_opt=None) -> config:
+        """
+        Load the configuration, merging user options with default values.
+        """
+        if user_opt is None:
+            user_dict = {}
+        elif isinstance(user_opt, config):
+            user_dict = vars(user_opt)
+        elif isinstance(user_opt, dict):
+            user_dict = user_opt
+        else:
+            raise TypeError("user_opt must be dict, config(SimpleNamespace) or None")
+
+        self._validate_keys(user_dict)
+        merged = {**self._default_dict, **user_dict}
+        return config(**merged)
+
+
 # Local LLM backends (e.g. Ollama on a single GPU) typically serve one request
 # at a time. PageIndex fires many concurrent LLM calls via asyncio.gather, which
 # would otherwise pile up in the backend's queue faster than they can be served,
 # causing later requests to exceed the client timeout and retry, compounding the
 # pileup. Capping in-flight requests keeps the queue bounded.
-_LLM_CONCURRENCY = int(os.getenv("PAGEINDEX_LLM_CONCURRENCY", "4"))
-_llm_semaphore = asyncio.Semaphore(_LLM_CONCURRENCY)
-_LLM_TIMEOUT = float(os.getenv("PAGEINDEX_LLM_TIMEOUT", "1800"))
+_llm_config = ConfigLoader().load()
+_LLM_CONCURRENCY = _llm_config.llm_concurrency
+_LLM_TIMEOUT = _llm_config.llm_timeout
+
+# asyncio.Semaphore binds to whichever event loop first awaits it; a module-level
+# instance built once at import time breaks on the second asyncio.run() call in
+# the same process (e.g. indexing a second document) with "bound to a different
+# event loop". Rebuild it whenever the running loop changes instead.
+_llm_semaphore = None
+_llm_semaphore_loop = None
+
+def _get_llm_semaphore():
+    global _llm_semaphore, _llm_semaphore_loop
+    loop = asyncio.get_running_loop()
+    if _llm_semaphore is None or _llm_semaphore_loop is not loop:
+        _llm_semaphore = asyncio.Semaphore(_LLM_CONCURRENCY)
+        _llm_semaphore_loop = loop
+    return _llm_semaphore
 
 def count_tokens(text, model=None):
     if not text:
@@ -75,7 +125,7 @@ async def llm_acompletion(model, prompt):
     messages = [{"role": "user", "content": prompt}]
     for i in range(max_retries):
         try:
-            async with _llm_semaphore:
+            async with _get_llm_semaphore():
                 response = await litellm.acompletion(
                     model=model,
                     messages=messages,
@@ -502,37 +552,4 @@ def format_structure(structure, order=None):
         structure = [format_structure(item, order) for item in structure]
     return structure
 
-
-class ConfigLoader:
-    def __init__(self, default_path: str = None):
-        if default_path is None:
-            default_path = Path(__file__).parent / "config.yaml"
-        self._default_dict = self._load_yaml(default_path)
-
-    @staticmethod
-    def _load_yaml(path):
-        with open(path, "r", encoding="utf-8") as f:
-            return yaml.safe_load(f) or {}
-
-    def _validate_keys(self, user_dict):
-        unknown_keys = set(user_dict) - set(self._default_dict)
-        if unknown_keys:
-            raise ValueError(f"Unknown config keys: {unknown_keys}")
-
-    def load(self, user_opt=None) -> config:
-        """
-        Load the configuration, merging user options with default values.
-        """
-        if user_opt is None:
-            user_dict = {}
-        elif isinstance(user_opt, config):
-            user_dict = vars(user_opt)
-        elif isinstance(user_opt, dict):
-            user_dict = user_opt
-        else:
-            raise TypeError("user_opt must be dict, config(SimpleNamespace) or None")
-
-        self._validate_keys(user_dict)
-        merged = {**self._default_dict, **user_dict}
-        return config(**merged)
 

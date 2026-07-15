@@ -8,3 +8,7 @@ if_add_node_id: "yes"
 if_add_node_summary: "no"
 if_add_doc_description: "yes"
 if_add_node_text: "no"
+llm_concurrency: 4  # max concurrent async LLM calls (asyncio.gather); local single-GPU
+                    # backends need this capped, not for speed but to avoid overwhelming
+                    # the request queue and triggering client-timeout retry storms
+llm_timeout: 1800   # seconds, per LLM call

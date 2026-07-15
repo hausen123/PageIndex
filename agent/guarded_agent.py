@@ -11,12 +11,13 @@ continue.
 """
 import json
 import logging
-import os
 import time
 
 import litellm
 
-_LLM_TIMEOUT = float(os.getenv("PAGEINDEX_LLM_TIMEOUT", "1800"))
+from pageindex.utils import ConfigLoader
+
+_LLM_TIMEOUT = ConfigLoader().load().llm_timeout
 _LLM_MAX_RETRIES = 5
 
 
@@ -108,6 +109,95 @@ NUDGE_MESSAGE = (
     "question asks about. Call get_page_content on the relevant page(s) now."
 )
 
+SELECT_DOCUMENT_TOOL = {
+    "type": "function",
+    "function": {
+        "name": "select_document",
+        "description": "Select which document to use to answer the question.",
+        "parameters": {
+            "type": "object",
+            "properties": {"doc_id": {"type": "string"}},
+            "required": ["doc_id"],
+        },
+    },
+}
+
+_SELECT_DOCUMENT_NUDGE = (
+    "That doc_id does not exist. Available doc_ids are: {doc_ids}. "
+    "Call select_document again with one of these exact doc_id values."
+)
+
+
+def _select_document(client, question: str, model: str, model_kwargs: dict, verbose: bool = True) -> str:
+    """
+    A single, isolated turn (separate from the main tool loop) whose only job is
+    to pick which workspace document to query. Forced via tool_choice so the
+    model can't skip straight to answering — only used when the workspace holds
+    more than one document; see query_agent_guarded.
+    """
+    docs = [
+        {
+            "doc_id": did,
+            "doc_name": doc.get("doc_name", ""),
+            "doc_description": doc.get("doc_description", ""),
+        }
+        for did, doc in client.documents.items()
+    ]
+    messages = [
+        {
+            "role": "user",
+            "content": (
+                "Select the document most relevant to the following question by calling "
+                "select_document with its doc_id.\n\n"
+                f"Question: {question}\n\n"
+                f"Available documents:\n{json.dumps(docs, ensure_ascii=False, indent=2)}"
+            ),
+        }
+    ]
+
+    for _ in range(3):
+        response = _completion_with_retries(
+            model=model,
+            messages=messages,
+            tools=[SELECT_DOCUMENT_TOOL],
+            tool_choice={"type": "function", "function": {"name": "select_document"}},
+            **model_kwargs,
+        )
+        msg = response.choices[0].message
+        tool_calls = msg.tool_calls or []
+        if not tool_calls:
+            messages.append({"role": "user", "content": "You must call select_document."})
+            continue
+
+        try:
+            args = json.loads(tool_calls[0].function.arguments or "{}")
+        except json.JSONDecodeError:
+            args = {}
+        doc_id = args.get("doc_id")
+
+        if verbose:
+            print(f"\n[select_document]: {doc_id}")
+
+        if doc_id in client.documents:
+            return doc_id
+
+        messages.append(
+            {
+                "role": "assistant",
+                "content": msg.content or "",
+                "tool_calls": [tc.model_dump() for tc in tool_calls],
+            }
+        )
+        messages.append(
+            {
+                "role": "tool",
+                "tool_call_id": tool_calls[0].id,
+                "content": _SELECT_DOCUMENT_NUDGE.format(doc_ids=list(client.documents.keys())),
+            }
+        )
+
+    raise RuntimeError("Failed to select a valid document after 3 attempts")
+
 
 def _execute_tool(client, doc_id, name, args):
     if name == "get_document":
@@ -123,9 +213,9 @@ def _execute_tool(client, doc_id, name, args):
 
 def query_agent_guarded(
     client,
-    doc_id: str,
     question: str,
     model: str,
+    doc_id: str | None = None,
     model_kwargs: dict | None = None,
     max_turns: int = 12,
     verbose: bool = True,
@@ -134,8 +224,22 @@ def query_agent_guarded(
     Ask a question with a hard guarantee: get_page_content must be called at
     least once before a final answer is accepted. If the model tries to answer
     without it, the answer is discarded and the model is told to continue.
+
+    doc_id: which workspace document to query. If None: auto-selected when the
+    workspace holds exactly one document; with 2+ documents, a forced, isolated
+    tool call (_select_document) picks one before the main loop starts — the
+    main loop itself is identical either way.
     """
     model_kwargs = model_kwargs or {}
+
+    if doc_id is None:
+        if len(client.documents) == 1:
+            doc_id = next(iter(client.documents))
+        elif len(client.documents) > 1:
+            doc_id = _select_document(client, question, model, model_kwargs, verbose=verbose)
+        else:
+            raise RuntimeError("No documents found in workspace")
+
     messages = [
         {"role": "system", "content": SYSTEM_PROMPT},
         {"role": "user", "content": question},
