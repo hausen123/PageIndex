@@ -2,9 +2,9 @@ import json
 import PyPDF2
 
 try:
-    from .utils import get_number_of_pages, remove_fields, structure_to_list
+    from .utils import get_number_of_pages, remove_fields
 except ImportError:
-    from utils import get_number_of_pages, remove_fields, structure_to_list
+    from utils import get_number_of_pages, remove_fields
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
@@ -53,33 +53,10 @@ def _get_pdf_page_content(doc_info: dict, page_nums: list[int]) -> list[dict]:
         ]
 
 
-def _get_md_page_content(doc_info: dict, page_nums: list[int]) -> list[dict]:
-    """
-    For Markdown documents, 'pages' are line numbers.
-    Find nodes whose line_num falls within [min(page_nums), max(page_nums)] and return their text.
-    """
-    min_line, max_line = min(page_nums), max(page_nums)
-    results = []
-    seen = set()
-
-    def _traverse(nodes):
-        for node in nodes:
-            ln = node.get('line_num')
-            if ln and min_line <= ln <= max_line and ln not in seen:
-                seen.add(ln)
-                results.append({'page': ln, 'content': node.get('text', '')})
-            if node.get('nodes'):
-                _traverse(node['nodes'])
-
-    _traverse(doc_info.get('structure', []))
-    results.sort(key=lambda x: x['page'])
-    return results
-
-
 # ── Tool functions ────────────────────────────────────────────────────────────
 
 def get_document(documents: dict, doc_id: str) -> str:
-    """Return JSON with document metadata: doc_id, doc_name, doc_description, type, status, page_count (PDF) or line_count (Markdown)."""
+    """Return JSON with document metadata: doc_id, doc_name, doc_description, type, status, page_count."""
     doc_info = documents.get(doc_id)
     if not doc_info:
         return json.dumps({'error': f'Document {doc_id} not found'})
@@ -90,11 +67,8 @@ def get_document(documents: dict, doc_id: str) -> str:
         'doc_description': doc_info.get('doc_description', ''),
         'type': doc_info.get('type', ''),
         'status': 'completed',
+        'page_count': _count_pages(doc_info),
     }
-    if doc_info.get('type') == 'pdf':
-        result['page_count'] = _count_pages(doc_info)
-    else:
-        result['line_count'] = doc_info.get('line_count', 0)
     return json.dumps(result, ensure_ascii=False)
 
 
@@ -119,9 +93,7 @@ def get_page_content(documents: dict, doc_id: str, pages: str) -> str:
     """
     Retrieve page content for a document.
 
-    pages format: '5-7', '3,8', or '12'
-    For PDF: pages are physical page numbers (1-indexed).
-    For Markdown: pages are line numbers corresponding to node headers.
+    pages format: '5-7', '3,8', or '12' — physical page numbers (1-indexed).
 
     Returns JSON list of {'page': int, 'content': str}.
     """
@@ -135,10 +107,7 @@ def get_page_content(documents: dict, doc_id: str, pages: str) -> str:
         return json.dumps({'error': f'Invalid pages format: {pages!r}. Use "5-7", "3,8", or "12". Error: {e}'})
 
     try:
-        if doc_info.get('type') == 'pdf':
-            content = _get_pdf_page_content(doc_info, page_nums)
-        else:
-            content = _get_md_page_content(doc_info, page_nums)
+        content = _get_pdf_page_content(doc_info, page_nums)
     except Exception as e:
         return json.dumps({'error': f'Failed to read page content: {e}'})
 
@@ -172,14 +141,8 @@ def search_document(documents: dict, doc_id: str, keyword: str, max_snippets: in
         return json.dumps({'error': 'keyword must not be empty'})
 
     try:
-        if doc_info.get('type') == 'pdf':
-            total_pages = _count_pages(doc_info)
-            all_pages = _get_pdf_page_content(doc_info, list(range(1, total_pages + 1)))
-        else:
-            all_pages = [
-                {'page': node.get('line_num'), 'content': node.get('text', '')}
-                for node in structure_to_list(doc_info.get('structure', []))
-            ]
+        total_pages = _count_pages(doc_info)
+        all_pages = _get_pdf_page_content(doc_info, list(range(1, total_pages + 1)))
     except Exception as e:
         return json.dumps({'error': f'Failed to read document content: {e}'})
 

@@ -1,14 +1,11 @@
 import os
 import uuid
 import json
-import asyncio
-import concurrent.futures
 from pathlib import Path
 
 import PyPDF2
 
 from .page_index import page_index
-from .page_index_md import md_to_tree
 from .retrieve import get_document, get_document_structure, get_page_content, search_document
 from .utils import ConfigLoader, extract_doc_title, remove_fields
 
@@ -50,87 +47,47 @@ class PageIndexClient:
         if self.workspace:
             self._load_workspace()
 
-    def index(self, file_path: str, mode: str = "auto") -> str:
-        """Index a document. Returns a document_id."""
+    def index(self, file_path: str) -> str:
+        """Index a PDF document. Returns a document_id."""
         # Persist a canonical absolute path so workspace reloads do not
         # reinterpret caller-relative paths against the workspace directory.
         file_path = os.path.abspath(os.path.expanduser(file_path))
         if not os.path.exists(file_path):
             raise FileNotFoundError(f"File not found: {file_path}")
+        if os.path.splitext(file_path)[1].lower() != '.pdf':
+            raise ValueError(f"Unsupported file format for: {file_path}")
 
         doc_id = str(uuid.uuid4())
-        ext = os.path.splitext(file_path)[1].lower()
 
-        is_pdf = ext == '.pdf'
-        is_md = ext in ['.md', '.markdown']
+        print(f"Indexing PDF: {file_path}")
+        # if_add_node_summary/if_add_doc_description/if_add_node_text are left
+        # to config.yaml — PDF retrieval reads from the 'pages' cache below
+        # (extracted separately), not from structure text, so node text isn't
+        # needed here regardless of the config value.
+        result = page_index(
+            doc=file_path,
+            model=self.model,
+            if_add_node_id='yes',
+        )
+        # Extract per-page text so queries don't need the original PDF
+        pages = []
+        with open(file_path, 'rb') as f:
+            pdf_reader = PyPDF2.PdfReader(f)
+            for i, page in enumerate(pdf_reader.pages, 1):
+                pages.append({'page': i, 'content': page.extract_text() or ''})
+        doc_title = extract_doc_title(pages[0]['content'], model=self.model) if pages else ''
 
-        if mode == "pdf" or (mode == "auto" and is_pdf):
-            print(f"Indexing PDF: {file_path}")
-            # if_add_node_summary/if_add_doc_description/if_add_node_text are left
-            # to config.yaml — PDF retrieval reads from the 'pages' cache below
-            # (extracted separately), not from structure text, so node text isn't
-            # needed here regardless of the config value.
-            result = page_index(
-                doc=file_path,
-                model=self.model,
-                if_add_node_id='yes',
-            )
-            # Extract per-page text so queries don't need the original PDF
-            pages = []
-            with open(file_path, 'rb') as f:
-                pdf_reader = PyPDF2.PdfReader(f)
-                for i, page in enumerate(pdf_reader.pages, 1):
-                    pages.append({'page': i, 'content': page.extract_text() or ''})
-            doc_title = extract_doc_title(pages[0]['content'], model=self.model) if pages else ''
-
-            self.documents[doc_id] = {
-                'id': doc_id,
-                'type': 'pdf',
-                'path': file_path,
-                'doc_name': result.get('doc_name', ''),
-                'doc_title': doc_title,
-                'doc_description': result.get('doc_description', ''),
-                'page_count': len(pages),
-                'structure': result['structure'],
-                'pages': pages,
-            }
-
-        elif mode == "md" or (mode == "auto" and is_md):
-            print(f"Indexing Markdown: {file_path}")
-            # md_to_tree doesn't consult config.yaml (unlike page_index()), so these
-            # are set explicitly. if_add_node_text stays 'yes': Markdown retrieval
-            # reads structure['text'] directly, with no separate pages cache like PDF has.
-            coro = md_to_tree(
-                md_path=file_path,
-                if_thinning=False,
-                if_add_node_summary='no',
-                summary_token_threshold=200,
-                model=self.model,
-                if_add_doc_description='yes',
-                if_add_node_text='yes',
-                if_add_node_id='yes'
-            )
-            try:
-                asyncio.get_running_loop()
-                with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
-                    result = pool.submit(asyncio.run, coro).result()
-            except RuntimeError:
-                result = asyncio.run(coro)
-            with open(file_path, 'r', encoding='utf-8') as f:
-                cover_text = f.read(500)
-            doc_title = extract_doc_title(cover_text, model=self.model) if cover_text.strip() else ''
-            self.documents[doc_id] = {
-                'id': doc_id,
-                'type': 'md',
-                'path': file_path,
-                'doc_name': result.get('doc_name', ''),
-                'doc_title': doc_title,
-                'doc_description': result.get('doc_description', ''),
-                'line_count': result.get('line_count', 0),
-                'structure': result['structure'],
-            }
-        else:
-            raise ValueError(f"Unsupported file format for: {file_path}")
+        self.documents[doc_id] = {
+            'id': doc_id,
+            'type': 'pdf',
+            'path': file_path,
+            'doc_name': result.get('doc_name', ''),
+            'doc_title': doc_title,
+            'doc_description': result.get('doc_description', ''),
+            'page_count': len(pages),
+            'structure': result['structure'],
+            'pages': pages,
+        }
 
         print(f"Indexing complete. Document ID: {doc_id}")
         if self.workspace:
@@ -140,18 +97,14 @@ class PageIndexClient:
     @staticmethod
     def _make_meta_entry(doc: dict) -> dict:
         """Build a lightweight meta entry from a document dict."""
-        entry = {
+        return {
             'type': doc.get('type', ''),
             'doc_name': doc.get('doc_name', ''),
             'doc_title': doc.get('doc_title', ''),
             'doc_description': doc.get('doc_description', ''),
             'path': doc.get('path', ''),
+            'page_count': doc.get('page_count'),
         }
-        if doc.get('type') == 'pdf':
-            entry['page_count'] = doc.get('page_count')
-        elif doc.get('type') == 'md':
-            entry['line_count'] = doc.get('line_count')
-        return entry
 
     @staticmethod
     def _read_json(path) -> dict | None:
@@ -168,8 +121,8 @@ class PageIndexClient:
 
     def _save_doc(self, doc_id: str):
         doc = self.documents[doc_id].copy()
-        # Strip text from structure nodes — redundant with pages (PDF only)
-        if doc.get('structure') and doc.get('type') == 'pdf':
+        # Strip text from structure nodes — redundant with the 'pages' cache
+        if doc.get('structure'):
             doc['structure'] = remove_fields(doc['structure'], fields=['text'])
         path = self.workspace / f"{doc_id}.json"
         with open(path, "w", encoding="utf-8") as f:
