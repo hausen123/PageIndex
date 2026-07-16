@@ -1,4 +1,4 @@
-# PageIndex - Shinsa
+# PageIndex - for Shinsa
 
 forked from the [VectifyAI/PageIndex](https://github.com/VectifyAI/PageIndex).
 
@@ -25,5 +25,5 @@ python run_query.py "質問文"
 python run_query.py "質問文" --log /tmp/llm_io.jsonl
 ```
 
-`data/index/`に複数の文書が索引済みの場合は、質問内容に応じて最も関連する文書が自動選択されます。
-`--log`を指定するとLLMの入出力をログとして出力します。
+複数の文書がインデックス済みの場合は、質問内容に応じて最も関連する文書が自動選択されます。
+`--log`を指定するとLLMの入出力のログを出力します。
