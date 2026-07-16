@@ -37,7 +37,6 @@ DEFAULT_IO_LOG = "/tmp/run_query_io.jsonl"
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("question", help="Question to ask the agent")
-    parser.add_argument("--doc", default=None, help="doc_id to query directly, skipping document selection")
     parser.add_argument("--model", default=None, help="litellm model string (default: config.yaml's retrieve_model)")
     parser.add_argument("--io-log", default=DEFAULT_IO_LOG, help=f"Log raw LLM input/output as JSONL to this path (default: {DEFAULT_IO_LOG})")
     args = parser.parse_args()
@@ -49,8 +48,6 @@ def main():
     client = PageIndexClient(workspace=WORKSPACE)
     if not client.documents:
         raise RuntimeError(f"No cached document found in workspace: {WORKSPACE}")
-    if args.doc and args.doc not in client.documents:
-        raise RuntimeError(f"--doc={args.doc!r} not found. Available: {list(client.documents.keys())}")
 
     # Note: client.retrieve_model is normalized for the OpenAI Agents SDK (adds a
     # "litellm/" prefix); guarded_agent.py calls litellm directly, so we read the
@@ -59,7 +56,7 @@ def main():
     model_kwargs = GEMMA4_SAFE_KWARGS if "gemma4" in model else {}
 
     print(f"Question: '{args.question}'")
-    answer, citations = query_agent_guarded(client, args.question, model=model, doc_id=args.doc, model_kwargs=model_kwargs)
+    answer, citations = query_agent_guarded(client, args.question, model=model, model_kwargs=model_kwargs)
     print("\n=== Final Answer ===")
     print(answer)
     print("\n=== 根拠資料 ===")

@@ -212,7 +212,6 @@ def query_agent_guarded(
     client,
     question: str,
     model: str,
-    doc_id: str | None = None,
     model_kwargs: dict | None = None,
     max_turns: int = 12,
     verbose: bool = True,
@@ -227,10 +226,10 @@ def query_agent_guarded(
     (currently always one, since a single doc_id is selected per question),
     covering every page actually fetched via get_page_content.
 
-    doc_id: which workspace document to query. If None: auto-selected when the
-    workspace holds exactly one document; with 2+ documents, a forced, isolated
-    tool call (_select_document) picks one before the main loop starts — the
-    main loop itself is identical either way.
+    Which workspace document to query is auto-selected: the sole document when
+    the workspace holds exactly one; with 2+ documents, a forced, isolated tool
+    call (_select_document) picks one before the main loop starts — the main
+    loop itself is identical either way.
 
     get_document metadata and get_document_structure's table of contents are
     fetched by the harness and injected below rather than left as first-turn
@@ -240,13 +239,12 @@ def query_agent_guarded(
     """
     model_kwargs = model_kwargs or {}
 
-    if doc_id is None:
-        if len(client.documents) == 1:
-            doc_id = next(iter(client.documents))
-        elif len(client.documents) > 1:
-            doc_id = _select_document(client, question, model, model_kwargs, verbose=verbose)
-        else:
-            raise RuntimeError("No documents found in workspace")
+    if len(client.documents) == 1:
+        doc_id = next(iter(client.documents))
+    elif len(client.documents) > 1:
+        doc_id = _select_document(client, question, model, model_kwargs, verbose=verbose)
+    else:
+        raise RuntimeError("No documents found in workspace")
 
     doc_info = client.get_document(doc_id)
     doc_structure = client.get_document_structure(doc_id, titles_only=True)
