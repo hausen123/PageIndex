@@ -22,17 +22,45 @@ import litellm
 from litellm.integrations.custom_logger import CustomLogger
 
 
+def _readable_arguments(arguments):
+    """Re-encode a tool call's JSON-string arguments without \\uXXXX escapes,
+    for log readability only — the escaped and unescaped forms are equally
+    valid JSON, so this has no effect on how the arguments are parsed."""
+    try:
+        return json.dumps(json.loads(arguments), ensure_ascii=False)
+    except (TypeError, ValueError):
+        return arguments
+
+
+def _serialize_tool_call(tc):
+    tc = tc.model_dump() if hasattr(tc, "model_dump") else dict(tc)
+    function = tc.get("function")
+    if isinstance(function, dict) and "arguments" in function:
+        function["arguments"] = _readable_arguments(function["arguments"])
+    return tc
+
+
 def _serialize_tool_calls(tool_calls):
     if not tool_calls:
         return None
     out = []
     for tc in tool_calls:
-        if hasattr(tc, "model_dump"):
-            out.append(tc.model_dump())
-        elif isinstance(tc, dict):
-            out.append(tc)
+        if hasattr(tc, "model_dump") or isinstance(tc, dict):
+            out.append(_serialize_tool_call(tc))
         else:
             out.append(str(tc))
+    return out
+
+
+def _readable_messages(messages):
+    """Return a copy of messages with any embedded tool_calls arguments
+    re-encoded for readability (see _readable_arguments)."""
+    out = []
+    for m in messages or []:
+        m = dict(m)
+        if m.get("tool_calls"):
+            m["tool_calls"] = [_serialize_tool_call(tc) for tc in m["tool_calls"]]
+        out.append(m)
     return out
 
 
@@ -51,7 +79,7 @@ class JSONLIOLogger(CustomLogger):
             "ts": time.strftime("%Y-%m-%dT%H:%M:%S"),
             "duration_s": (end_time - start_time).total_seconds() if start_time and end_time else None,
             "model": model,
-            "input_messages": messages,
+            "input_messages": _readable_messages(messages),
             "tools": tools,
             "ok": ok,
         }
