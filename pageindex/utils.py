@@ -521,6 +521,20 @@ def create_clean_structure_for_description(structure):
         return structure
 
 
+def extract_doc_title(cover_text, model=None):
+    prompt = f"""You are an expert in reading document cover pages.
+    You are given the text of a document's first page (cover page). Your task is to
+    extract the document's title, exactly as written, with no paraphrasing.
+    If there is no clear title on this page, return an empty string.
+
+    Page text: {cover_text}
+
+    Directly return only the title (or an empty string), do not include any other text.
+    """
+    response = llm_completion(model, prompt)
+    return response.strip()
+
+
 def generate_doc_description(structure, model=None):
     prompt = f"""Your are an expert in generating descriptions for a document.
     You are given a structure of a document. Your task is to generate a one-sentence description for the document, which makes it easy to distinguish the document from other documents.

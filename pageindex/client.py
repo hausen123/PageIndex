@@ -10,7 +10,7 @@ import PyPDF2
 from .page_index import page_index
 from .page_index_md import md_to_tree
 from .retrieve import get_document, get_document_structure, get_page_content, search_document
-from .utils import ConfigLoader, remove_fields
+from .utils import ConfigLoader, extract_doc_title, remove_fields
 
 META_INDEX = "_meta.json"
 
@@ -81,12 +81,14 @@ class PageIndexClient:
                 pdf_reader = PyPDF2.PdfReader(f)
                 for i, page in enumerate(pdf_reader.pages, 1):
                     pages.append({'page': i, 'content': page.extract_text() or ''})
+            doc_title = extract_doc_title(pages[0]['content'], model=self.model) if pages else ''
 
             self.documents[doc_id] = {
                 'id': doc_id,
                 'type': 'pdf',
                 'path': file_path,
                 'doc_name': result.get('doc_name', ''),
+                'doc_title': doc_title,
                 'doc_description': result.get('doc_description', ''),
                 'page_count': len(pages),
                 'structure': result['structure'],
@@ -114,11 +116,15 @@ class PageIndexClient:
                     result = pool.submit(asyncio.run, coro).result()
             except RuntimeError:
                 result = asyncio.run(coro)
+            with open(file_path, 'r', encoding='utf-8') as f:
+                cover_text = f.read(500)
+            doc_title = extract_doc_title(cover_text, model=self.model) if cover_text.strip() else ''
             self.documents[doc_id] = {
                 'id': doc_id,
                 'type': 'md',
                 'path': file_path,
                 'doc_name': result.get('doc_name', ''),
+                'doc_title': doc_title,
                 'doc_description': result.get('doc_description', ''),
                 'line_count': result.get('line_count', 0),
                 'structure': result['structure'],
@@ -137,6 +143,7 @@ class PageIndexClient:
         entry = {
             'type': doc.get('type', ''),
             'doc_name': doc.get('doc_name', ''),
+            'doc_title': doc.get('doc_title', ''),
             'doc_description': doc.get('doc_description', ''),
             'path': doc.get('path', ''),
         }

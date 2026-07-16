@@ -86,6 +86,7 @@ def get_document(documents: dict, doc_id: str) -> str:
     result = {
         'doc_id': doc_id,
         'doc_name': doc_info.get('doc_name', ''),
+        'doc_title': doc_info.get('doc_title', ''),
         'doc_description': doc_info.get('doc_description', ''),
         'type': doc_info.get('type', ''),
         'status': 'completed',

@@ -123,6 +123,7 @@ def _select_document(client, question: str, model: str, model_kwargs: dict, verb
         {
             "doc_id": did,
             "doc_name": doc.get("doc_name", ""),
+            "doc_title": doc.get("doc_title", ""),
             "doc_description": doc.get("doc_description", ""),
         }
         for did, doc in client.documents.items()
