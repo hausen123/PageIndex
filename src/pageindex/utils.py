@@ -26,7 +26,7 @@ litellm.drop_params = True
 class ConfigLoader:
     def __init__(self, default_path: str = None):
         if default_path is None:
-            default_path = Path(__file__).parent.parent / "config.yaml"
+            default_path = Path(__file__).parent.parent.parent / "config.yaml"
         self._default_dict = self._load_yaml(default_path)
 
     @staticmethod
@@ -234,26 +234,24 @@ def get_pdf_name(pdf_path):
 
 
 class JsonLogger:
+    """Append-only trace log for the indexing pipeline (debug use, not reviewed
+    after the fact — a single shared file is enough; each line carries its own
+    doc name so entries from different indexing runs stay distinguishable)."""
+
+    FILENAME = "trace.jsonl"
+
     def __init__(self, file_path):
-        # Extract PDF name for logger name
-        pdf_name = get_pdf_name(file_path)
-            
-        current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
-        self.filename = f"{pdf_name}_{current_time}.json"
+        self.doc_name = get_pdf_name(file_path)
         os.makedirs("./logs", exist_ok=True)
-        # Initialize empty list to store all messages
-        self.log_data = []
 
     def log(self, level, message, **kwargs):
+        entry = {'level': level, 'doc': self.doc_name, 'ts': datetime.now().isoformat()}
         if isinstance(message, dict):
-            self.log_data.append(message)
+            entry.update(message)
         else:
-            self.log_data.append({'message': message})
-        # Add new message to the log data
-        
-        # Write entire log data to file
-        with open(self._filepath(), "w") as f:
-            json.dump(self.log_data, f, indent=2)
+            entry['message'] = message
+        with open(self._filepath(), "a", encoding="utf-8") as f:
+            f.write(json.dumps(entry, ensure_ascii=False) + "\n")
 
     def info(self, message, **kwargs):
         self.log("INFO", message, **kwargs)
@@ -262,7 +260,7 @@ class JsonLogger:
         self.log("ERROR", message, **kwargs)
 
     def _filepath(self):
-        return os.path.join("logs", self.filename)
+        return os.path.join("logs", self.FILENAME)
     
 
 

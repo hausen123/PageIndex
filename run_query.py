@@ -1,24 +1,26 @@
 """
-Ask a question against the indexed document in agent/workspace/, without
-re-indexing. Uses the harness-enforced agent loop (agent/guarded_agent.py):
-get_page_content must be called at least once before any answer is accepted —
-local models don't reliably follow "verify before answering" as a prompt
-instruction, so this is enforced structurally instead.
+Ask a question against the indexed document(s) in data/index/, without
+re-indexing. With more than one indexed document, the most relevant one is
+auto-selected before answering. Uses the harness-enforced agent loop
+(src/query_agent/guarded_agent.py): get_page_content must be called at least
+once before any answer is accepted — local models don't reliably follow
+"verify before answering" as a prompt instruction, so this is enforced
+structurally instead. Prints the cited page ranges alongside the answer.
 
 Usage:
-    python3 run_agent.py "質問文"
-    python3 run_agent.py "質問文" --model ollama_chat/qwen3:14b
-    python3 run_agent.py "質問文" --io-log /tmp/my_run_io.jsonl
+    python3 run_query.py "質問文"
+    python3 run_query.py "質問文" --model ollama_chat/qwen3:14b
+    python3 run_query.py "質問文" --io-log /tmp/my_run_io.jsonl
 """
 import argparse
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent))
+sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 from pageindex import PageIndexClient
 from pageindex.utils import ConfigLoader
-from agent.guarded_agent import query_agent_guarded
+from query_agent.guarded_agent import query_agent_guarded
 
 # Gemma4 release notes recommend top_k=50, min_p=0.05 to curb repetition collapse;
 # temperature=0 (greedy) has no escape hatch since Ollama's sampler ignores repeat_penalty for this model.
@@ -28,8 +30,8 @@ GEMMA4_SAFE_KWARGS = {
     "extra_body": {"top_k": 50, "min_p": 0.05},
 }
 
-WORKSPACE = Path(__file__).parent / "agent" / "workspace"
-DEFAULT_IO_LOG = "/tmp/run_agent_io.jsonl"
+WORKSPACE = Path(__file__).parent / "data" / "index"
+DEFAULT_IO_LOG = "/tmp/run_query_io.jsonl"
 
 
 def main():
@@ -40,7 +42,7 @@ def main():
     parser.add_argument("--io-log", default=DEFAULT_IO_LOG, help=f"Log raw LLM input/output as JSONL to this path (default: {DEFAULT_IO_LOG})")
     args = parser.parse_args()
 
-    from agent.llm_io_logger import enable, log_event
+    from query_agent.llm_io_logger import enable, log_event
     enable(args.io_log)
     print(f"Logging LLM I/O to: {args.io_log}")
 
