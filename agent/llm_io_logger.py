@@ -114,8 +114,23 @@ class JSONLIOLogger(CustomLogger):
         self._record(kwargs, response_obj, start_time, end_time, ok=False, error=kwargs.get("exception"))
 
 
+_active_logger = None
+
+
 def enable(path):
     """Register the logger as the sole litellm callback and return it."""
+    global _active_logger
     logger = JSONLIOLogger(path)
     litellm.callbacks = [logger]
+    _active_logger = logger
     return logger
+
+
+def log_event(record: dict):
+    """Append a harness-synthesized record (not an LLM call) to the active
+    log, e.g. citations — a no-op if enable() hasn't been called."""
+    if _active_logger is None:
+        return
+    entry = {"ts": time.strftime("%Y-%m-%dT%H:%M:%S"), **record}
+    with open(_active_logger.path, "a", encoding="utf-8") as f:
+        f.write(json.dumps(entry, ensure_ascii=False) + "\n")

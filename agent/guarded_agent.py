@@ -15,6 +15,7 @@ import time
 
 import litellm
 
+from pageindex.retrieve import _parse_pages
 from pageindex.utils import ConfigLoader
 
 _LLM_TIMEOUT = ConfigLoader().load().llm_timeout
@@ -184,6 +185,21 @@ def _select_document(client, question: str, model: str, model_kwargs: dict, verb
     raise RuntimeError("Failed to select a valid document after 3 attempts")
 
 
+def _format_page_ranges(pages: set[int]) -> str:
+    """Compress a set of page numbers into '3,5-10,12' style ranges."""
+    ordered = sorted(pages)
+    ranges = []
+    start = prev = ordered[0]
+    for p in ordered[1:]:
+        if p == prev + 1:
+            prev = p
+            continue
+        ranges.append(str(start) if start == prev else f"{start}-{prev}")
+        start = prev = p
+    ranges.append(str(start) if start == prev else f"{start}-{prev}")
+    return ",".join(ranges)
+
+
 def _execute_tool(client, doc_id, name, args):
     if name == "get_page_content":
         return client.get_page_content(doc_id, args.get("pages", ""))
@@ -200,11 +216,16 @@ def query_agent_guarded(
     model_kwargs: dict | None = None,
     max_turns: int = 12,
     verbose: bool = True,
-) -> str:
+) -> tuple[str, list[dict]]:
     """
     Ask a question with a hard guarantee: get_page_content must be called at
     least once before a final answer is accepted. If the model tries to answer
     without it, the answer is discarded and the model is told to continue.
+
+    Returns (answer, citations) where citations is a list of
+    {"doc_title": str, "pages": "3,5-10,12"} — one entry per queried document
+    (currently always one, since a single doc_id is selected per question),
+    covering every page actually fetched via get_page_content.
 
     doc_id: which workspace document to query. If None: auto-selected when the
     workspace holds exactly one document; with 2+ documents, a forced, isolated
@@ -245,6 +266,7 @@ def query_agent_guarded(
         },
     ]
     page_content_called = False
+    pages_cited: set[int] = set()
 
     for _ in range(max_turns):
         response = _completion_with_retries(model=model, messages=messages, tools=TOOLS, tool_choice="auto", **model_kwargs)
@@ -266,6 +288,10 @@ def query_agent_guarded(
                     args = {}
                 if name == "get_page_content":
                     page_content_called = True
+                    try:
+                        pages_cited.update(_parse_pages(args.get("pages", "")))
+                    except ValueError:
+                        pass
                 result = _execute_tool(client, doc_id, name, args)
                 if verbose:
                     print(f"\n[tool call]: {name}({args})")
@@ -282,6 +308,8 @@ def query_agent_guarded(
             messages.append({"role": "user", "content": NUDGE_MESSAGE})
             continue
 
-        return msg.content or ""
+        doc_title = client.documents[doc_id].get("doc_title") or client.documents[doc_id].get("doc_name", "")
+        citations = [{"doc_title": doc_title, "pages": _format_page_ranges(pages_cited)}]
+        return msg.content or "", citations
 
-    return "[Error: exceeded max_turns without a verified (get_page_content-backed) answer]"
+    return "[Error: exceeded max_turns without a verified (get_page_content-backed) answer]", []

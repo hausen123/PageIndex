@@ -40,7 +40,7 @@ def main():
     parser.add_argument("--io-log", default=DEFAULT_IO_LOG, help=f"Log raw LLM input/output as JSONL to this path (default: {DEFAULT_IO_LOG})")
     args = parser.parse_args()
 
-    from agent.llm_io_logger import enable
+    from agent.llm_io_logger import enable, log_event
     enable(args.io_log)
     print(f"Logging LLM I/O to: {args.io_log}")
 
@@ -57,9 +57,13 @@ def main():
     model_kwargs = GEMMA4_SAFE_KWARGS if "gemma4" in model else {}
 
     print(f"Question: '{args.question}'")
-    answer = query_agent_guarded(client, args.question, model=model, doc_id=args.doc, model_kwargs=model_kwargs)
+    answer, citations = query_agent_guarded(client, args.question, model=model, doc_id=args.doc, model_kwargs=model_kwargs)
     print("\n=== Final Answer ===")
     print(answer)
+    print("\n=== 根拠資料 ===")
+    for i, c in enumerate(citations, 1):
+        print(f"[{i}]{c['doc_title']}(page {c['pages']})")
+    log_event({"type": "citations", "citations": citations})
 
 
 if __name__ == "__main__":
