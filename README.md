@@ -1,4 +1,4 @@
-# PageIndex - for Shinsa.
+# PageIndex - Shinsa
 
 forked from the [VectifyAI/PageIndex](https://github.com/VectifyAI/PageIndex).
 
@@ -16,14 +16,14 @@ source .venv/bin/activate   # Python仮想環境
 python run_pageindex.py /path/to/document.pdf
 ```
 
-`data/`にPDFとインデックス済みドキュメントが保存されます。詳細なインデックスの設定（要約生成の有無など）は`config.yaml`で設定できます。
+`data/`にインデックス済みドキュメントが保存されます。設定は`config.yaml`
 
 ## 2. 質問する
 
 ```bash
 python run_query.py "質問文"
-python run_query.py "質問文" --log /tmp/my_run_io.jsonl
+python run_query.py "質問文" --log /tmp/llm_io.jsonl
 ```
 
 `data/index/`に複数の文書が索引済みの場合は、質問内容に応じて最も関連する文書が自動選択されます。
-`--log`を指定するとLLMの入出力をログとして出力します。モデルは`--model`のようなCLI引数ではなく`config.yaml`で指定します。
+`--log`を指定するとLLMの入出力をログとして出力します。
