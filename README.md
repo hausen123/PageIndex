@@ -22,7 +22,7 @@ python3 run_pageindex.py /path/to/document.md
 
 `agent/workspace/`にインデックス済みドキュメントが保存されます（PDF/Markdown
 はファイル拡張子で自動判別）。詳細な挙動（要約生成の有無など）は
-`pageindex/config.yaml`で設定します。
+`config.yaml`で設定します。
 
 ## 2. 質問する
 

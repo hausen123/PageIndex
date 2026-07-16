@@ -26,7 +26,7 @@ litellm.drop_params = True
 class ConfigLoader:
     def __init__(self, default_path: str = None):
         if default_path is None:
-            default_path = Path(__file__).parent / "config.yaml"
+            default_path = Path(__file__).parent.parent / "config.yaml"
         self._default_dict = self._load_yaml(default_path)
 
     @staticmethod
