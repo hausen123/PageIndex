@@ -8,9 +8,10 @@ once before any answer is accepted — local models don't reliably follow
 structurally instead. Prints the cited page ranges alongside the answer.
 
 Usage:
-    python3 run_query.py "質問文"
-    python3 run_query.py "質問文" --model ollama_chat/qwen3:14b
-    python3 run_query.py "質問文" --io-log /tmp/my_run_io.jsonl
+    python run_query.py "質問文"
+    python run_query.py "質問文" --log /tmp/my_run_io.jsonl
+
+Model is set via config.yaml's retrieve_model, not a CLI flag.
 """
 import argparse
 import sys
@@ -31,19 +32,18 @@ GEMMA4_SAFE_KWARGS = {
 }
 
 WORKSPACE = Path(__file__).parent / "data" / "index"
-DEFAULT_IO_LOG = "/tmp/run_query_io.jsonl"
+DEFAULT_LOG = "/tmp/run_query_io.jsonl"
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("question", help="Question to ask the agent")
-    parser.add_argument("--model", default=None, help="litellm model string (default: config.yaml's retrieve_model)")
-    parser.add_argument("--io-log", default=DEFAULT_IO_LOG, help=f"Log raw LLM input/output as JSONL to this path (default: {DEFAULT_IO_LOG})")
+    parser.add_argument("--log", default=DEFAULT_LOG, help=f"Log raw LLM input/output as JSONL to this path (default: {DEFAULT_LOG})")
     args = parser.parse_args()
 
     from query_agent.llm_io_logger import enable, log_event
-    enable(args.io_log)
-    print(f"Logging LLM I/O to: {args.io_log}")
+    enable(args.log)
+    print(f"Logging LLM I/O to: {args.log}")
 
     client = PageIndexClient(workspace=WORKSPACE)
     if not client.documents:
@@ -52,7 +52,7 @@ def main():
     # Note: client.retrieve_model is normalized for the OpenAI Agents SDK (adds a
     # "litellm/" prefix); guarded_agent.py calls litellm directly, so we read the
     # raw config value instead.
-    model = args.model or ConfigLoader().load().retrieve_model
+    model = ConfigLoader().load().retrieve_model
     model_kwargs = GEMMA4_SAFE_KWARGS if "gemma4" in model else {}
 
     print(f"Question: '{args.question}'")

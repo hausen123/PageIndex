@@ -1,5 +1,5 @@
 model: "ollama/odytrice/gemma4:4090-26b"
-# model: "anthropic/claude-sonnet-4-6"
+# model: "openai/gpt-5.6-luna"
 retrieve_model: "ollama_chat/odytrice/gemma4:4090-26b"  # defaults to `model` if not set
 toc_check_page_num: 20
 max_page_num_each_node: 10

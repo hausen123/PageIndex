@@ -32,12 +32,11 @@ def _copy_into_docs_dir(src_path: Path) -> Path:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Index a PDF document into data/index/")
     parser.add_argument("path", type=str, help="Path to the PDF file")
-    parser.add_argument("--model", type=str, default=None, help="Model to use (overrides config.yaml)")
     args = parser.parse_args()
 
     src_path = Path(args.path).expanduser().resolve()
     dest_path = _copy_into_docs_dir(src_path)
 
-    client = PageIndexClient(model=args.model, workspace=str(WORKSPACE))
+    client = PageIndexClient(workspace=str(WORKSPACE))
     doc_id = client.index(str(dest_path))
     print(f"Indexed. doc_id: {doc_id}")
