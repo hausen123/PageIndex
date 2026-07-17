@@ -132,6 +132,20 @@ class PageIndexClient:
         self.documents[doc_id].pop('structure', None)
         self.documents[doc_id].pop('pages', None)
 
+    def delete_document(self, doc_id: str):
+        """Remove a document's index cache (its JSON file and _meta.json entry).
+        The source PDF in data/docs/ is left untouched — deleting the index is
+        not the same as deleting the document, and re-indexing should stay cheap."""
+        if doc_id not in self.documents:
+            raise KeyError(f"Document {doc_id} not found")
+        del self.documents[doc_id]
+        if self.workspace:
+            (self.workspace / f"{doc_id}.json").unlink(missing_ok=True)
+            meta = self._read_meta() or {}
+            meta.pop(doc_id, None)
+            with open(self.workspace / META_INDEX, "w", encoding="utf-8") as f:
+                json.dump(meta, f, ensure_ascii=False, indent=2)
+
     def _rebuild_meta(self) -> dict:
         """Scan individual doc JSON files and return a meta dict."""
         meta = {}
