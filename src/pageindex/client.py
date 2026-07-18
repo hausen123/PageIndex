@@ -1,13 +1,14 @@
 import os
 import uuid
 import json
+from datetime import datetime
 from pathlib import Path
 
 import PyPDF2
 
 from .page_index import page_index
 from .retrieve import get_document, get_document_structure, get_page_content, search_document
-from .utils import ConfigLoader, extract_doc_title, remove_fields
+from .utils import ConfigLoader, extract_doc_date, extract_doc_title, remove_fields
 
 META_INDEX = "_meta.json"
 
@@ -76,6 +77,9 @@ class PageIndexClient:
             for i, page in enumerate(pdf_reader.pages, 1):
                 pages.append({'page': i, 'content': page.extract_text() or ''})
         doc_title = extract_doc_title(pages[0]['content'], model=self.model) if pages else ''
+        doc_date = extract_doc_date(pages[0]['content'], model=self.model) if pages else ''
+        if not doc_date:
+            doc_date = datetime.fromtimestamp(os.path.getctime(file_path)).strftime('%Y-%m-%d')
 
         self.documents[doc_id] = {
             'id': doc_id,
@@ -83,6 +87,7 @@ class PageIndexClient:
             'path': file_path,
             'doc_name': result.get('doc_name', ''),
             'doc_title': doc_title,
+            'doc_date': doc_date,
             'doc_description': result.get('doc_description', ''),
             'page_count': len(pages),
             'structure': result['structure'],
@@ -101,6 +106,7 @@ class PageIndexClient:
             'type': doc.get('type', ''),
             'doc_name': doc.get('doc_name', ''),
             'doc_title': doc.get('doc_title', ''),
+            'doc_date': doc.get('doc_date', ''),
             'doc_description': doc.get('doc_description', ''),
             'path': doc.get('path', ''),
             'page_count': doc.get('page_count'),

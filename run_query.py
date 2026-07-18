@@ -61,7 +61,7 @@ def main():
     print(answer)
     print("\n=== 根拠資料 ===")
     for i, c in enumerate(citations, 1):
-        print(f"[{i}]{c['doc_title']}(page {c['pages']})")
+        print(f"[{i}]{c['doc_title']} ({c['doc_date']})(page {c['pages']})")
     log_event({"type": "citations", "citations": citations})
 
 

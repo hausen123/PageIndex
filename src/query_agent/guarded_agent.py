@@ -222,7 +222,7 @@ def query_agent_guarded(
     without it, the answer is discarded and the model is told to continue.
 
     Returns (answer, citations) where citations is a list of
-    {"doc_title": str, "pages": "3,5-10,12"} — one entry per queried document
+    {"doc_title": str, "doc_date": str, "pages": "3,5-10,12"} — one entry per queried document
     (currently always one, since a single doc_id is selected per question),
     covering every page actually fetched via get_page_content.
 
@@ -307,7 +307,8 @@ def query_agent_guarded(
             continue
 
         doc_title = client.documents[doc_id].get("doc_title") or client.documents[doc_id].get("doc_name", "")
-        citations = [{"doc_title": doc_title, "pages": _format_page_ranges(pages_cited)}]
+        doc_date = client.documents[doc_id].get("doc_date", "")
+        citations = [{"doc_title": doc_title, "doc_date": doc_date, "pages": _format_page_ranges(pages_cited)}]
         return msg.content or "", citations
 
     return "[Error: exceeded max_turns without a verified (get_page_content-backed) answer]", []

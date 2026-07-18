@@ -37,6 +37,7 @@ def _print_list(client: PageIndexClient):
         print(f"doc_id: {doc_id}")
         print(f"  doc_name : {doc.get('doc_name', '')}")
         print(f"  doc_title: {doc.get('doc_title', '')}")
+        print(f"  doc_date : {doc.get('doc_date', '')}")
         print(f"  pages    : {doc.get('page_count', '')}")
 
 
