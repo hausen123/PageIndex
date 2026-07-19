@@ -1,5 +1,5 @@
 import json
-import PyPDF2
+import pymupdf
 
 try:
     from .utils import get_number_of_pages, remove_fields
@@ -43,12 +43,11 @@ def _get_pdf_page_content(doc_info: dict, page_nums: list[int]) -> list[dict]:
             for p in page_nums if p in page_map
         ]
     path = doc_info['path']
-    with open(path, 'rb') as f:
-        pdf_reader = PyPDF2.PdfReader(f)
-        total = len(pdf_reader.pages)
+    with pymupdf.open(path) as pdf:
+        total = len(pdf)
         valid_pages = [p for p in page_nums if 1 <= p <= total]
         return [
-            {'page': p, 'content': pdf_reader.pages[p - 1].extract_text() or ''}
+            {'page': p, 'content': pdf[p - 1].get_text() or ''}
             for p in valid_pages
         ]
 

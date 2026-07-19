@@ -65,6 +65,7 @@ class ConfigLoader:
 _llm_config = ConfigLoader().load()
 _LLM_CONCURRENCY = _llm_config.llm_concurrency
 _LLM_TIMEOUT = _llm_config.llm_timeout
+_LLM_MAX_RETRIES = _llm_config.llm_max_retries
 
 # asyncio.Semaphore binds to whichever event loop first awaits it; a module-level
 # instance built once at import time breaks on the second asyncio.run() call in
@@ -90,7 +91,7 @@ def count_tokens(text, model=None):
 def llm_completion(model, prompt, chat_history=None, return_finish_reason=False):
     if model:
         model = model.removeprefix("litellm/")
-    max_retries = 10
+    max_retries = _LLM_MAX_RETRIES
     messages = list(chat_history) + [{"role": "user", "content": prompt}] if chat_history else [{"role": "user", "content": prompt}]
     for i in range(max_retries):
         try:
@@ -121,7 +122,7 @@ def llm_completion(model, prompt, chat_history=None, return_finish_reason=False)
 async def llm_acompletion(model, prompt):
     if model:
         model = model.removeprefix("litellm/")
-    max_retries = 10
+    max_retries = _LLM_MAX_RETRIES
     messages = [{"role": "user", "content": prompt}]
     for i in range(max_retries):
         try:
@@ -328,7 +329,7 @@ def add_preface_if_needed(data):
 
 
 
-def get_page_tokens(pdf_path, model=None, pdf_parser="PyPDF2"):
+def get_page_tokens(pdf_path, model=None, pdf_parser="PyMuPDF"):
     if pdf_parser == "PyPDF2":
         pdf_reader = PyPDF2.PdfReader(pdf_path)
         page_list = []

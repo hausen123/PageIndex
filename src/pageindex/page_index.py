@@ -431,29 +431,17 @@ def add_page_number_to_toc(part, structure, model=None):
 ### add verify completeness
 def generate_toc_continue(toc_content, part, model=None):
     print('start generate_toc_continue')
-    prompt = """
-    You are an expert in extracting hierarchical tree structure.
+    # Kept short deliberately: local models have limited context, and this
+    # prompt already carries the full previous TOC plus a large text chunk.
+    # A longer, more explanatory version of these instructions was observed
+    # to make the model return an empty response on long documents.
+    prompt = """You are an expert in extracting hierarchical tree structure.
     You are given a tree structure of the previous part and the text of the current part.
     Your task is to continue the tree structure from the previous part to include the current part.
-
-    The structure variable is the numeric system which represents the index of the hierarchy section in the table of contents. For example, the first section has structure index 1, the first subsection has structure index 1.1, the second subsection has structure index 1.2, etc.
-
+    The structure variable is the numeric system which represents the index of the hierarchy section in the table of contents.
     For the title, you need to extract the original title from the text, only fix the space inconsistency.
-
-    The provided text contains tags like <physical_index_X> and <physical_index_X> to indicate the start and end of page X. \
-    
+    The provided text contains tags like <physical_index_X> and <physical_index_X> to indicate the start and end of page X.
     For the physical_index, you need to extract the physical index of the start of the section from the text. Keep the <physical_index_X> format.
-
-    The response should be in the following format. 
-        [
-            {
-                "structure": <structure index, "x.x.x"> (string),
-                "title": <title of the section, keep the original title>,
-                "physical_index": "<physical_index_X> (keep the format)"
-            },
-            ...
-        ]    
-
     Directly return the additional part of the final JSON structure. Do not output anything else."""
 
     prompt = prompt + '\nGiven text\n:' + part + '\nPrevious tree structure\n:' + json.dumps(toc_content, indent=2)
@@ -512,9 +500,25 @@ def process_no_toc(page_list, start_index=1, model=None, logger=None):
     if not isinstance(toc_with_page_number, list):
         toc_with_page_number = []
     for group_text in group_texts[1:]:
-        toc_with_page_number_additional = generate_toc_continue(toc_with_page_number, group_text, model)
-        if isinstance(toc_with_page_number_additional, list):
+        # extract_json returns {} (not a list) when the LLM response fails to
+        # parse — retry a few times before giving up, instead of silently
+        # dropping this group's section headings from the final TOC.
+        # Only the tail of the TOC so far is needed to know where the
+        # numbering left off — sending the whole accumulated TOC bloats the
+        # prompt on long documents and was observed to make local models
+        # give up and return nothing.
+        recent_toc = toc_with_page_number[-5:]
+        toc_with_page_number_additional = None
+        for attempt in range(3):
+            result = generate_toc_continue(recent_toc, group_text, model)
+            if isinstance(result, list):
+                toc_with_page_number_additional = result
+                break
+            logger.info(f'generate_toc_continue: unparseable response on attempt {attempt+1}/3, retrying')
+        if toc_with_page_number_additional is not None:
             toc_with_page_number.extend(toc_with_page_number_additional)
+        else:
+            logger.info('generate_toc_continue: gave up after 3 attempts, this group is missing from the TOC')
     logger.info(f'generate_toc: {toc_with_page_number}')
 
     toc_with_page_number = convert_physical_index_to_int(toc_with_page_number)

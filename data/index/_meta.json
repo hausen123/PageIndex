@@ -16,5 +16,104 @@
     "doc_description": "柏崎刈羽原子力発電所6号及び7号炉における、地震・津波・外部衝撃等の自然災害および重大事故等への安全対策と、その有効性評価に関する申請の概要をまとめた文書。",
     "path": "/home/ryo/2026/PageIndex/data/docs/NRA022002226-002-008.pdf",
     "page_count": 50
+  },
+  "4eb6844e-7bd0-48ef-95c0-c70a150ecb85": {
+    "type": "pdf",
+    "doc_name": "NRA078400189-002-001.pdf",
+    "doc_title": "",
+    "doc_date": "2026-07-18",
+    "doc_description": "6号炉および7号炉における非常用冷却設備や重大事故等対処設備の構造、放射性廃棄物・放射線管理施設の設備、ならびに燃料損傷防止対策の有効性評価と工事計画について詳述した文書。",
+    "path": "/home/ryo/2026/PageIndex/data/docs/NRA078400189-002-001.pdf",
+    "page_count": 147
+  },
+  "f579bdca-ba92-4cf8-ba73-7edfb6539ba2": {
+    "type": "pdf",
+    "doc_name": "NRA078400189-002-002.pdf",
+    "doc_title": "添   付   書   類",
+    "doc_date": "```json\n{}\n```",
+    "doc_description": "新潟地方気象台および高田特別地域気象観測所における、気温、降水量、積雪、風速などの極値や順位をまとめた気候統計の資料です。",
+    "path": "/home/ryo/2026/PageIndex/data/docs/NRA078400189-002-002.pdf",
+    "page_count": 58
+  },
+  "e080cee4-2293-419f-a7cf-f3a8d537617f": {
+    "type": "pdf",
+    "doc_name": "NRA078400189-002-003.pdf",
+    "doc_title": "3. 地盤",
+    "doc_date": "2026-07-18",
+    "doc_description": "原子炉設置変更許可申請（原管発官 25 第 192 号）に係る、敷地周辺および敷地内の地質・地質構造、断層、ならびに基礎地盤の安定性評価に関する調査結果をまとめた文書です。",
+    "path": "/home/ryo/2026/PageIndex/data/docs/NRA078400189-002-003.pdf",
+    "page_count": 144
+  },
+  "b28be173-a3bf-4abf-93f2-710987abdb33": {
+    "type": "pdf",
+    "doc_name": "NRA078400189-002-004.pdf",
+    "doc_title": "",
+    "doc_date": "2026-07-18",
+    "doc_description": "6号および7号炉の地質層序、断層性状、解析用物性値、すべり安全率、および建屋傾斜の検討結果をまとめた技術資料。",
+    "path": "/home/ryo/2026/PageIndex/data/docs/NRA078400189-002-004.pdf",
+    "page_count": 42
+  },
+  "920e5c73-4135-4814-8b04-efe9a5fcd82e": {
+    "type": "pdf",
+    "doc_name": "NRA078400189-002-014.pdf",
+    "doc_title": "第3.2.4-1図<0xE3><0x80><0x80>敷地の地質調査位置図",
+    "doc_date": "2026-07-18",
+    "doc_description": "敷地の地質構造、反射法地震探査による深度断面、および６号・７号炉付近の断層調査結果などを示す地質関連の図面集です。",
+    "path": "/home/ryo/2026/PageIndex/data/docs/NRA078400189-002-014.pdf",
+    "page_count": 22
+  },
+  "5ed10f96-9581-4460-8a13-f95e1f3e47e5": {
+    "type": "pdf",
+    "doc_name": "NRA078400189-002-015.pdf",
+    "doc_title": "６・７号炉付近の地盤分類図",
+    "doc_date": "2026-07-18",
+    "doc_description": "6号炉および7号炉付近の地盤分類図、解析用要素分割図、および平面図をまとめた図面構成。",
+    "path": "/home/ryo/2026/PageIndex/data/docs/NRA078400189-002-015.pdf",
+    "page_count": 6
+  },
+  "f006c359-9b8a-44c2-9a1a-c148b0ecb087": {
+    "type": "pdf",
+    "doc_name": "NRA078400189-002-016.pdf",
+    "doc_title": "6―4―14. 水理",
+    "doc_date": "\"\"",
+    "doc_description": "原子炉設置変更許可申請（原管発官 25 第 192 号）に関連する、水理および地震（活断層や基準地震動の評価を含む）に関する詳細な検討内容をまとめた文書です。",
+    "path": "/home/ryo/2026/PageIndex/data/docs/NRA078400189-002-016.pdf",
+    "page_count": 125
+  },
+  "b9543fb9-dbf6-4ce5-9804-7e498dd13cad": {
+    "type": "pdf",
+    "doc_name": "NRA078400189-002-018.pdf",
+    "doc_title": "6－7－1 7.  地震，津波以外の自然現象",
+    "doc_date": "2026-07-18",
+    "doc_description": "地震や津波を除く自然現象（風、竜巻、積雪、低温、落雷、火山）の選定および設計基準の設定方法について、評価手順や検討事項をまとめた文書。",
+    "path": "/home/ryo/2026/PageIndex/data/docs/NRA078400189-002-018.pdf",
+    "page_count": 35
+  },
+  "010076bf-8e3f-433a-b7b1-c31a3c4ef9a4": {
+    "type": "pdf",
+    "doc_name": "NRA078400189-002-019.pdf",
+    "doc_title": "変更後における発電用原子炉施設の安全設計に関する説明書",
+    "doc_date": "```\n```",
+    "doc_description": "実用発電用原子炉における耐津波設計、重大事故等への対処、計測制御や電気設備、放射線防護などの設計基準および設備仕様を詳細に規定した技術文書です。",
+    "path": "/home/ryo/2026/PageIndex/data/docs/NRA078400189-002-019.pdf",
+    "page_count": 405
+  },
+  "4f5a9011-556c-4f8a-935d-3eb8956083c0": {
+    "type": "pdf",
+    "doc_name": "NRA078400189-002-020.pdf",
+    "doc_title": "変更後における発電用原子炉施設において事故が発生した場合における当該事故に対処するために必要な施設及び体制の整備に関する説明書",
+    "doc_date": "2026-07-18",
+    "doc_description": "重大事故の発生および拡大防止に向けた技術的能力や、炉心損傷・格納容器破損・使用済燃料プール等の対策に関する有効性評価の基本方針についてまとめた文書です。",
+    "path": "/home/ryo/2026/PageIndex/data/docs/NRA078400189-002-020.pdf",
+    "page_count": 183
+  },
+  "f5951fd8-ae1f-4cc4-81e4-0bb21803df9e": {
+    "type": "pdf",
+    "doc_name": "NRA078400189-002-017.pdf",
+    "doc_title": "",
+    "doc_date": "2026-07-18",
+    "doc_description": "地震（活断層や日本海東縁部）、海底地すべり、火山現象に起因する津波について、数値シミュレーションを用いて水位変化の不確かさや海底地形への影響を詳細に評価した報告書。",
+    "path": "/home/ryo/2026/PageIndex/data/docs/NRA078400189-002-017.pdf",
+    "page_count": 54
   }
 }

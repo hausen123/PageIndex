@@ -4,7 +4,7 @@ import json
 from datetime import datetime
 from pathlib import Path
 
-import PyPDF2
+import pymupdf
 
 from .page_index import page_index
 from .retrieve import get_document, get_document_structure, get_page_content, search_document
@@ -70,12 +70,12 @@ class PageIndexClient:
             model=self.model,
             if_add_node_id='yes',
         )
-        # Extract per-page text so queries don't need the original PDF
+        # Extract per-page text so queries don't need the original PDF.
+        # PyMuPDF handles Japanese font/CMap encodings PyPDF2 garbles.
         pages = []
-        with open(file_path, 'rb') as f:
-            pdf_reader = PyPDF2.PdfReader(f)
-            for i, page in enumerate(pdf_reader.pages, 1):
-                pages.append({'page': i, 'content': page.extract_text() or ''})
+        with pymupdf.open(file_path) as pdf:
+            for i, page in enumerate(pdf, 1):
+                pages.append({'page': i, 'content': page.get_text() or ''})
         doc_title = extract_doc_title(pages[0]['content'], model=self.model) if pages else ''
         doc_date = extract_doc_date(pages[0]['content'], model=self.model) if pages else ''
         if not doc_date:
