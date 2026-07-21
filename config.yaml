@@ -14,3 +14,5 @@ llm_concurrency: 1  # max concurrent async LLM calls (asyncio.gather); local sin
 llm_timeout: 1800   # seconds, per LLM call
 llm_max_retries: 3  # give up after this many attempts instead of retrying a slow/stuck
                     # backend for hours (was hardcoded to 10, i.e. up to 10*llm_timeout)
+ocr_model: "ollama/glm-ocr-gpu"  # vision model used to OCR pages with no extractable
+                                 # text layer (scanned PDFs)

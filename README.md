@@ -10,6 +10,8 @@ LLMを使ったPDF文書のインデックス作成・検索ツールです。
 source .venv/bin/activate   # Python仮想環境
 ```
 
+> スキャンPDF(テキスト層なし)はOCR(vision model)でフォールバック抽出します。Ollamaでvision modelをGPUオフロードするには `/etc/systemd/system/ollama.service.d/override.conf` に `Environment="LLAMA_ARG_MMPROJ_OFFLOAD=1"` を設定し、`sudo systemctl restart ollama` してください(未設定でも動作しますが、OCRがCPU実行になり大幅に遅くなります)。
+
 ## 1. インデックス作成
 
 ```bash

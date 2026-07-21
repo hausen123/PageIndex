@@ -4,11 +4,9 @@ import json
 from datetime import datetime
 from pathlib import Path
 
-import pymupdf
-
 from .page_index import page_index
 from .retrieve import get_document, get_document_structure, get_page_content, search_document
-from .utils import ConfigLoader, extract_doc_date, extract_doc_title, remove_fields
+from .utils import ConfigLoader, extract_doc_date, extract_doc_title, get_page_tokens, remove_fields
 
 META_INDEX = "_meta.json"
 
@@ -61,21 +59,23 @@ class PageIndexClient:
         doc_id = str(uuid.uuid4())
 
         print(f"Indexing PDF: {file_path}")
+        # Extract per-page text once, shared by structure generation (below)
+        # and the 'pages' cache (so queries don't need the original PDF).
+        # PyMuPDF handles Japanese font/CMap encodings PyPDF2 garbles; pages
+        # with no text layer at all (scanned PDFs) fall back to OCR.
+        page_list = get_page_tokens(file_path, model=self.model, ocr_fallback=True)
+        pages = [{'page': i, 'content': text} for i, (text, _) in enumerate(page_list, 1)]
+
         # if_add_node_summary/if_add_doc_description/if_add_node_text are left
-        # to config.yaml — PDF retrieval reads from the 'pages' cache below
-        # (extracted separately), not from structure text, so node text isn't
-        # needed here regardless of the config value.
+        # to config.yaml — PDF retrieval reads from the 'pages' cache above,
+        # not from structure text, so node text isn't needed here regardless
+        # of the config value.
         result = page_index(
             doc=file_path,
+            page_list=page_list,
             model=self.model,
             if_add_node_id='yes',
         )
-        # Extract per-page text so queries don't need the original PDF.
-        # PyMuPDF handles Japanese font/CMap encodings PyPDF2 garbles.
-        pages = []
-        with pymupdf.open(file_path) as pdf:
-            for i, page in enumerate(pdf, 1):
-                pages.append({'page': i, 'content': page.get_text() or ''})
         doc_title = extract_doc_title(pages[0]['content'], model=self.model) if pages else ''
         doc_date = extract_doc_date(pages[0]['content'], model=self.model) if pages else ''
         if not doc_date:

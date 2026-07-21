@@ -66,6 +66,7 @@ _llm_config = ConfigLoader().load()
 _LLM_CONCURRENCY = _llm_config.llm_concurrency
 _LLM_TIMEOUT = _llm_config.llm_timeout
 _LLM_MAX_RETRIES = _llm_config.llm_max_retries
+_OCR_MODEL = _llm_config.ocr_model
 
 # asyncio.Semaphore binds to whichever event loop first awaits it; a module-level
 # instance built once at import time breaks on the second asyncio.run() call in
@@ -329,7 +330,40 @@ def add_preface_if_needed(data):
 
 
 
-def get_page_tokens(pdf_path, model=None, pdf_parser="PyMuPDF"):
+def ocr_page(page, dpi=150) -> str:
+    """OCR a PyMuPDF page image via a local vision model, for scanned pages
+    with no extractable text layer."""
+    import base64
+    pix = page.get_pixmap(dpi=dpi)
+    b64 = base64.b64encode(pix.tobytes("png")).decode()
+    response = llm_completion_vision(_OCR_MODEL, b64)
+    return response
+
+
+def llm_completion_vision(model, image_b64, prompt="Extract all text from this image, preserving reading order. Output only the extracted text, no commentary."):
+    max_retries = _LLM_MAX_RETRIES
+    messages = [{
+        "role": "user",
+        "content": [
+            {"type": "text", "text": prompt},
+            {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{image_b64}"}},
+        ],
+    }]
+    for i in range(max_retries):
+        try:
+            response = litellm.completion(model=model, messages=messages, temperature=0, timeout=_LLM_TIMEOUT)
+            return response.choices[0].message.content or ""
+        except Exception as e:
+            print('************* Retrying OCR *************')
+            logging.error(f"OCR error: {e}")
+            if i < max_retries - 1:
+                time.sleep(1)
+            else:
+                logging.error('Max retries reached for OCR')
+                return ""
+
+
+def get_page_tokens(pdf_path, model=None, pdf_parser="PyMuPDF", ocr_fallback=False):
     if pdf_parser == "PyPDF2":
         pdf_reader = PyPDF2.PdfReader(pdf_path)
         page_list = []
@@ -348,6 +382,9 @@ def get_page_tokens(pdf_path, model=None, pdf_parser="PyMuPDF"):
         page_list = []
         for page in doc:
             page_text = page.get_text()
+            if ocr_fallback and not page_text.strip():
+                print(f'OCR fallback: page {page.number + 1} has no text layer')
+                page_text = ocr_page(page)
             token_length = litellm.token_counter(model=model, text=page_text)
             page_list.append((page_text, token_length))
         return page_list
@@ -520,6 +557,36 @@ def create_clean_structure_for_description(structure):
         return structure
 
 
+_BYTE_ESCAPE_RUN_RE = re.compile(r'(?:<0x[0-9A-Fa-f]{2}>)+')
+
+
+def _decode_byte_escapes(match: re.Match) -> str:
+    """Some models transcribe certain characters (observed: full-width
+    space, U+3000) as literal '<0xXX>' byte-escape notation instead of the
+    actual character. Decode the run back to UTF-8, or drop it if invalid."""
+    hex_bytes = re.findall(r'[0-9A-Fa-f]{2}', match.group(0))
+    try:
+        return bytes(int(h, 16) for h in hex_bytes).decode('utf-8')
+    except (ValueError, UnicodeDecodeError):
+        return ''
+
+
+def _clean_llm_text_response(text: str) -> str:
+    """Strip markdown code fences and collapse placeholder/non-content
+    responses (e.g. '```json\\n{}\\n```', '""', '---') to an empty string,
+    so callers can rely on a plain `if not value` emptiness check."""
+    text = text.strip()
+    if text.startswith('```'):
+        text = text.split('\n', 1)[1] if '\n' in text else text[3:]
+        if text.endswith('```'):
+            text = text[:-3]
+        text = text.strip()
+    text = _BYTE_ESCAPE_RUN_RE.sub(_decode_byte_escapes, text)
+    if not re.search(r'\w', text):
+        return ''
+    return text
+
+
 def extract_doc_title(cover_text, model=None):
     prompt = f"""You are an expert in reading document cover pages.
     You are given the text of a document's first page (cover page). Your task is to
@@ -531,7 +598,7 @@ def extract_doc_title(cover_text, model=None):
     Directly return only the title (or an empty string), do not include any other text.
     """
     response = llm_completion(model, prompt)
-    return response.strip()
+    return _clean_llm_text_response(response)
 
 
 def extract_doc_date(cover_text, model=None):
@@ -546,7 +613,7 @@ def extract_doc_date(cover_text, model=None):
     Directly return only the date (or an empty string), do not include any other text.
     """
     response = llm_completion(model, prompt)
-    return response.strip()
+    return _clean_llm_text_response(response)
 
 
 def generate_doc_description(structure, model=None):

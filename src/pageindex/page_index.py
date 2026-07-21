@@ -998,18 +998,8 @@ async def tree_parser(page_list, opt, doc=None, logger=None):
     return toc_tree
 
 
-def page_index_main(doc, opt=None):
+def page_index_main(doc, page_list, opt=None):
     logger = JsonLogger(doc)
-    
-    is_valid_pdf = (
-        (isinstance(doc, str) and os.path.isfile(doc) and doc.lower().endswith(".pdf")) or 
-        isinstance(doc, BytesIO)
-    )
-    if not is_valid_pdf:
-        raise ValueError("Unsupported input type. Expected a PDF file path or BytesIO object.")
-
-    print('Parsing PDF...')
-    page_list = get_page_tokens(doc, model=opt.model)
 
     logger.info({'total_page_number': len(page_list)})
     logger.info({'total_token': sum([page[1] for page in page_list])})
@@ -1040,15 +1030,15 @@ def page_index_main(doc, opt=None):
     return asyncio.run(page_index_builder())
 
 
-def page_index(doc, model=None, toc_check_page_num=None, max_page_num_each_node=None, max_token_num_each_node=None,
+def page_index(doc, page_list, model=None, toc_check_page_num=None, max_page_num_each_node=None, max_token_num_each_node=None,
                if_add_node_id=None, if_add_node_summary=None, if_add_doc_description=None, if_add_node_text=None):
-    
+
     user_opt = {
         arg: value for arg, value in locals().items()
-        if arg != "doc" and value is not None
+        if arg not in ("doc", "page_list") and value is not None
     }
     opt = ConfigLoader().load(user_opt)
-    return page_index_main(doc, opt)
+    return page_index_main(doc, page_list, opt)
 
 
 def validate_and_truncate_physical_indices(toc_with_page_number, page_list_length, start_index=1, logger=None):

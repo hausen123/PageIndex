@@ -20,7 +20,7 @@
   "4eb6844e-7bd0-48ef-95c0-c70a150ecb85": {
     "type": "pdf",
     "doc_name": "NRA078400189-002-001.pdf",
-    "doc_title": "",
+    "doc_title": "柏崎刈羽原子力発電所原子炉設置変更許可申請書\n（6号及び7号原子炉施設の変更）",
     "doc_date": "2026-07-18",
     "doc_description": "6号炉および7号炉における非常用冷却設備や重大事故等対処設備の構造、放射性廃棄物・放射線管理施設の設備、ならびに燃料損傷防止対策の有効性評価と工事計画について詳述した文書。",
     "path": "/home/ryo/2026/PageIndex/data/docs/NRA078400189-002-001.pdf",
@@ -30,7 +30,7 @@
     "type": "pdf",
     "doc_name": "NRA078400189-002-002.pdf",
     "doc_title": "添   付   書   類",
-    "doc_date": "```json\n{}\n```",
+    "doc_date": "2026-07-18",
     "doc_description": "新潟地方気象台および高田特別地域気象観測所における、気温、降水量、積雪、風速などの極値や順位をまとめた気候統計の資料です。",
     "path": "/home/ryo/2026/PageIndex/data/docs/NRA078400189-002-002.pdf",
     "page_count": 58
@@ -56,26 +56,17 @@
   "920e5c73-4135-4814-8b04-efe9a5fcd82e": {
     "type": "pdf",
     "doc_name": "NRA078400189-002-014.pdf",
-    "doc_title": "第3.2.4-1図<0xE3><0x80><0x80>敷地の地質調査位置図",
+    "doc_title": "第3.2.4-1図　敷地の地質調査位置図",
     "doc_date": "2026-07-18",
     "doc_description": "敷地の地質構造、反射法地震探査による深度断面、および６号・７号炉付近の断層調査結果などを示す地質関連の図面集です。",
     "path": "/home/ryo/2026/PageIndex/data/docs/NRA078400189-002-014.pdf",
     "page_count": 22
   },
-  "5ed10f96-9581-4460-8a13-f95e1f3e47e5": {
-    "type": "pdf",
-    "doc_name": "NRA078400189-002-015.pdf",
-    "doc_title": "６・７号炉付近の地盤分類図",
-    "doc_date": "2026-07-18",
-    "doc_description": "6号炉および7号炉付近の地盤分類図、解析用要素分割図、および平面図をまとめた図面構成。",
-    "path": "/home/ryo/2026/PageIndex/data/docs/NRA078400189-002-015.pdf",
-    "page_count": 6
-  },
   "f006c359-9b8a-44c2-9a1a-c148b0ecb087": {
     "type": "pdf",
     "doc_name": "NRA078400189-002-016.pdf",
     "doc_title": "6―4―14. 水理",
-    "doc_date": "\"\"",
+    "doc_date": "2026-07-18",
     "doc_description": "原子炉設置変更許可申請（原管発官 25 第 192 号）に関連する、水理および地震（活断層や基準地震動の評価を含む）に関する詳細な検討内容をまとめた文書です。",
     "path": "/home/ryo/2026/PageIndex/data/docs/NRA078400189-002-016.pdf",
     "page_count": 125
@@ -93,7 +84,7 @@
     "type": "pdf",
     "doc_name": "NRA078400189-002-019.pdf",
     "doc_title": "変更後における発電用原子炉施設の安全設計に関する説明書",
-    "doc_date": "```\n```",
+    "doc_date": "2026-07-18",
     "doc_description": "実用発電用原子炉における耐津波設計、重大事故等への対処、計測制御や電気設備、放射線防護などの設計基準および設備仕様を詳細に規定した技術文書です。",
     "path": "/home/ryo/2026/PageIndex/data/docs/NRA078400189-002-019.pdf",
     "page_count": 405
@@ -115,5 +106,95 @@
     "doc_description": "地震（活断層や日本海東縁部）、海底地すべり、火山現象に起因する津波について、数値シミュレーションを用いて水位変化の不確かさや海底地形への影響を詳細に評価した報告書。",
     "path": "/home/ryo/2026/PageIndex/data/docs/NRA078400189-002-017.pdf",
     "page_count": 54
+  },
+  "2635ff21-d3d9-448b-a757-ba1fc6d150fb": {
+    "type": "pdf",
+    "doc_name": "NRA078400189-002-005.pdf",
+    "doc_title": "第3.2.2-1図 敷地周辺陸域の地形図",
+    "doc_date": "2026-07-18",
+    "doc_description": "敷地周辺の陸域における地形、地質構造、活断層、および地震探査解析結果などを示す図面の一覧。",
+    "path": "/home/ryo/2026/PageIndex/data/docs/NRA078400189-002-005.pdf",
+    "page_count": 34
+  },
+  "77d18b91-66c0-4531-bbd9-3b4d86796ce1": {
+    "type": "pdf",
+    "doc_name": "NRA078400189-002-015.pdf",
+    "doc_title": "６・７号炉付近の地盤分類図",
+    "doc_date": "2026-07-18",
+    "doc_description": "6号炉および7号炉付近の地盤分類図、解析用要素分割図、および周辺平面図をまとめた図面構成です。",
+    "path": "/home/ryo/2026/PageIndex/data/docs/NRA078400189-002-015.pdf",
+    "page_count": 6
+  },
+  "10fc53a7-a4c5-4673-9c7f-24162cbe900c": {
+    "type": "pdf",
+    "doc_name": "NRA078400189-002-006.pdf",
+    "doc_title": "第3.2.2-29図 角田・弥彦断層南部における段丘面分布図",
+    "doc_date": "2026-07-18",
+    "doc_description": "鳥越測線や逆谷断層の深度断面、および地質構造の関係を示す図面を含む文書です。",
+    "path": "/home/ryo/2026/PageIndex/data/docs/NRA078400189-002-006.pdf",
+    "page_count": 25
+  },
+  "385a5fbe-afd7-4efd-ac77-ecb596ded212": {
+    "type": "pdf",
+    "doc_name": "NRA078400189-002-007.pdf",
+    "doc_title": "第3.2.2-53図 中央丘陵西縁部断層周辺の空中写真判読図",
+    "doc_date": "2026-07-18",
+    "doc_description": "中央丘陵西縁部断層や上富岡・親沢・片貝断層周辺の地質構造、空中写真判読図、深度断面図、および露頭スケッチなどをまとめた地質学的な図面集です。",
+    "path": "/home/ryo/2026/PageIndex/data/docs/NRA078400189-002-007.pdf",
+    "page_count": 22
+  },
+  "84d2a253-100f-4b27-981c-9c90571001b3": {
+    "type": "pdf",
+    "doc_name": "NRA078400189-002-008.pdf",
+    "doc_title": "第3.2.2-71図(1) 片貝・真人背斜の構造（反射法地震探査測線及び地質断面位置図）",
+    "doc_date": "2026-07-18",
+    "doc_description": "片貝・真人背斜や小千谷地区における地質構造、地震探査結果、GPS水平変動量、および断層の分布に関する図面集。",
+    "path": "/home/ryo/2026/PageIndex/data/docs/NRA078400189-002-008.pdf",
+    "page_count": 19
+  },
+  "28c08f5c-546e-4bee-89fb-4d6f00da8a13": {
+    "type": "pdf",
+    "doc_name": "NRA078400189-002-009.pdf",
+    "doc_title": "第3.2.2-86図(1) 敷地周辺海域の海底地形図",
+    "doc_date": "2026-07-18",
+    "doc_description": "敷地周辺および前面海域における海底地形・地質図、音波探査記録（M-1〜M-13測線）、および佐渡海盆から上越海盆にかけての解析図をまとめた、海底地質調査に関する図面資料です。",
+    "path": "/home/ryo/2026/PageIndex/data/docs/NRA078400189-002-009.pdf",
+    "page_count": 21
+  },
+  "85aa9234-1bba-48da-ac4b-6a08f51d19d9": {
+    "type": "pdf",
+    "doc_name": "NRA078400189-002-010.pdf",
+    "doc_title": "第3.2.2-91図(14) 敷地周辺調査海域の音波探査記録及び海底地質断面図",
+    "doc_date": "2026-07-18",
+    "doc_description": "M-14からM-30までのMシリーズおよびHM-4、HM-6、HM-8の測線が含まれる文書です。",
+    "path": "/home/ryo/2026/PageIndex/data/docs/NRA078400189-002-010.pdf",
+    "page_count": 21
+  },
+  "386a93d9-2851-4c58-9f19-7d35cdbf912a": {
+    "type": "pdf",
+    "doc_name": "NRA078400189-002-011.pdf",
+    "doc_title": "第3.2.2-92図 文献による敷地周辺海域の断層分布図",
+    "doc_date": "2026-07-18",
+    "doc_description": "佐渡海盆や柏崎沖における海底断層、地質構造、および音波探査（スパーカー・エアガン等）による海底地形の解析結果をまとめた図面集です。",
+    "path": "/home/ryo/2026/PageIndex/data/docs/NRA078400189-002-011.pdf",
+    "page_count": 41
+  },
+  "f51d9af4-c08f-4b12-af85-7ca666ed6db9": {
+    "type": "pdf",
+    "doc_name": "NRA078400189-002-012.pdf",
+    "doc_title": "第3.2.2-110図 佐渡島棚東緑撓曲周辺の地質構造図",
+    "doc_date": "2026-07-18",
+    "doc_description": "佐渡島周辺の地質構造、特にF-D褶曲群や高田沖褶曲群における音波探査記録、海底地質断面図、および断層面に関する詳細な図面をまとめた資料です。",
+    "path": "/home/ryo/2026/PageIndex/data/docs/NRA078400189-002-012.pdf",
+    "page_count": 17
+  },
+  "e9c3a60a-ae85-4512-b02e-e89a4127e39a": {
+    "type": "pdf",
+    "doc_name": "NRA078400189-002-013.pdf",
+    "doc_title": "第3.2.3-1図 敷地近傍の地形図",
+    "doc_date": "2026-07-18",
+    "doc_description": "柏崎平野および西山丘陵周辺における地形・地質構造、深度断面図、空中写真判読図など、敷地近傍の地質学的特徴を詳細に示す図面集です。",
+    "path": "/home/ryo/2026/PageIndex/data/docs/NRA078400189-002-013.pdf",
+    "page_count": 31
   }
 }
