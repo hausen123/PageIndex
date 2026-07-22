@@ -902,8 +902,11 @@ async def meta_processor(page_list, mode=None, toc_content=None, toc_page_list=N
     else:
         toc_with_page_number = process_no_toc(page_list, start_index=start_index, model=opt.model, logger=logger)
             
-    toc_with_page_number = [item for item in toc_with_page_number if item.get('physical_index') is not None] 
-    
+    toc_with_page_number = [item for item in toc_with_page_number if item.get('physical_index') is not None]
+    for item in toc_with_page_number:
+        if item.get('title'):
+            item['title'] = _clean_llm_text_response(item['title'])
+
     toc_with_page_number = validate_and_truncate_physical_indices(
         toc_with_page_number, 
         len(page_list), 

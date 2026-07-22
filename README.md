@@ -10,21 +10,28 @@ LLMを使ったPDF文書のインデックス作成・検索ツールです。
 source .venv/bin/activate   # Python仮想環境
 ```
 
-> スキャンPDF(テキスト層なし)はOCR(vision model)でフォールバック抽出します。Ollamaでvision modelをGPUオフロードするには `/etc/systemd/system/ollama.service.d/override.conf` に `Environment="LLAMA_ARG_MMPROJ_OFFLOAD=1"` を設定し、`sudo systemctl restart ollama` してください(未設定でも動作しますが、OCRがCPU実行になり大幅に遅くなります)。
+> スキャンPDF(テキスト層なし)はOCR(vision model)でフォールバック抽出します。Ollamaでvision modelをGPUオフロードするには `/etc/systemd/system/ollama.service.d/override.conf` に以下を設定し、`sudo systemctl daemon-reload && sudo systemctl restart ollama` してください(未設定でも動作しますが、OCRがCPU実行になり大幅に遅くなります):
+> ```
+> [Service]
+> Environment="LLAMA_ARG_MMPROJ_OFFLOAD=1"
+> Environment="OLLAMA_MAX_LOADED_MODELS=1"
+> ```
+> `OLLAMA_MAX_LOADED_MODELS=1`は必須です。OCR用モデルとTOC生成用モデルを交互に使うため、複数モデルの同時ロードを許すとVRAMを圧迫し、`LLAMA_ARG_MMPROJ_OFFLOAD=1`が無視されてCPU実行に戻ってしまいます。
 
 ## 1. インデックス作成
 
 ```bash
 python run_pageindex.py /path/to/document.pdf
 python run_pageindex.py --list
+python run_pageindex.py --show <doc_id>
 python run_pageindex.py --delete <doc_id>
 ```
 
 `data/`にインデックス済みドキュメントが保存されます。
 設定は`config.yaml`
 
-`--list`で索引済み文書の`doc_id`を確認できます。`--delete`は索引キャッシュのみを
-削除し、元のPDF（`data/docs/`）は残ります。
+`--list`で索引済み文書の`doc_id`を確認できます。`--show`はメタデータと目次を表示します。
+`--delete`は索引キャッシュのみを削除し、元のPDF（`data/docs/`）は残ります。
 
 ## 2. 質問する
 

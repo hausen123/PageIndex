@@ -118,8 +118,11 @@ _active_logger = None
 
 
 def enable(path):
-    """Register the logger as the sole litellm callback and return it."""
+    """Register the logger as the sole litellm callback and return it.
+    Truncates the log file so each run starts fresh (overwrite, not append
+    across runs) — records within a single run are still appended in order."""
     global _active_logger
+    open(path, "w", encoding="utf-8").close()
     logger = JSONLIOLogger(path)
     litellm.callbacks = [logger]
     _active_logger = logger

@@ -35,15 +35,6 @@
     "path": "/home/ryo/2026/PageIndex/data/docs/NRA078400189-002-003.pdf",
     "page_count": 144
   },
-  "b28be173-a3bf-4abf-93f2-710987abdb33": {
-    "type": "pdf",
-    "doc_name": "NRA078400189-002-004.pdf",
-    "doc_title": "",
-    "doc_date": "2026-07-18",
-    "doc_description": "6号および7号炉の地質層序、断層性状、解析用物性値、すべり安全率、および建屋傾斜の検討結果をまとめた技術資料。",
-    "path": "/home/ryo/2026/PageIndex/data/docs/NRA078400189-002-004.pdf",
-    "page_count": 42
-  },
   "920e5c73-4135-4814-8b04-efe9a5fcd82e": {
     "type": "pdf",
     "doc_name": "NRA078400189-002-014.pdf",
@@ -196,5 +187,14 @@
     "doc_description": "柏崎刈羽原子力発電所における6号及び7号原子炉施設の設置変更許可申請書であり、原子炉の構造や耐震・耐津波性能、重大事故等への対策および有効性評価などの詳細な技術的内容をまとめた文書です。",
     "path": "/home/ryo/2026/PageIndex/data/docs/NRA078400189-002-001.pdf",
     "page_count": 147
+  },
+  "885c3af3-fdbb-4839-b33f-4348edb57eef": {
+    "type": "pdf",
+    "doc_name": "NRA078400189-002-004.pdf",
+    "doc_title": "第3.2.2-1表 反射法地震探査の仕様一覧表",
+    "doc_date": "2026-07-18",
+    "doc_description": "地震探査や地質調査、活断層の解析、および6・7号炉原子炉建屋基礎地盤のすべり安全率に関する検討結果をまとめた一覧表です。",
+    "path": "/home/ryo/2026/PageIndex/data/docs/NRA078400189-002-004.pdf",
+    "page_count": 42
   }
 }
