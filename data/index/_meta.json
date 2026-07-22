@@ -17,15 +17,6 @@
     "path": "/home/ryo/2026/PageIndex/data/docs/NRA022002226-002-008.pdf",
     "page_count": 50
   },
-  "4eb6844e-7bd0-48ef-95c0-c70a150ecb85": {
-    "type": "pdf",
-    "doc_name": "NRA078400189-002-001.pdf",
-    "doc_title": "柏崎刈羽原子力発電所原子炉設置変更許可申請書\n（6号及び7号原子炉施設の変更）",
-    "doc_date": "2026-07-18",
-    "doc_description": "6号炉および7号炉における非常用冷却設備や重大事故等対処設備の構造、放射性廃棄物・放射線管理施設の設備、ならびに燃料損傷防止対策の有効性評価と工事計画について詳述した文書。",
-    "path": "/home/ryo/2026/PageIndex/data/docs/NRA078400189-002-001.pdf",
-    "page_count": 147
-  },
   "f579bdca-ba92-4cf8-ba73-7edfb6539ba2": {
     "type": "pdf",
     "doc_name": "NRA078400189-002-002.pdf",
@@ -196,5 +187,14 @@
     "doc_description": "柏崎平野および西山丘陵周辺における地形・地質構造、深度断面図、空中写真判読図など、敷地近傍の地質学的特徴を詳細に示す図面集です。",
     "path": "/home/ryo/2026/PageIndex/data/docs/NRA078400189-002-013.pdf",
     "page_count": 31
+  },
+  "01760402-4c45-4b33-b2f3-ff45420e611b": {
+    "type": "pdf",
+    "doc_name": "NRA078400189-002-001.pdf",
+    "doc_title": "柏崎刈羽原子力発電所原子炉設置変更許可申請書\n（6号及び7号原子炉施設の変更）",
+    "doc_date": "2013-09-27",
+    "doc_description": "柏崎刈羽原子力発電所における6号及び7号原子炉施設の設置変更許可申請書であり、原子炉の構造や耐震・耐津波性能、重大事故等への対策および有効性評価などの詳細な技術的内容をまとめた文書です。",
+    "path": "/home/ryo/2026/PageIndex/data/docs/NRA078400189-002-001.pdf",
+    "page_count": 147
   }
 }
